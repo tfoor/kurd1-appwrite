@@ -1281,40 +1281,142 @@ async function handleCustomerSignup() {
 }
 
 async function handleCustomerLogin() {
-  const email = document.getElementById("custLoginEmail").value.trim();
-  const password = document.getElementById("custLoginPassword").value;
-  const errEl = document.getElementById("accountError");
+  const email = document
+    .getElementById("custLoginEmail")
+    .value
+    .trim();
+
+  const password = document
+    .getElementById("custLoginPassword")
+    .value;
+
+  const errEl =
+    document.getElementById("accountError");
 
   errEl.style.color = "";
   errEl.textContent = "";
 
   if (!email || !password) {
-    errEl.textContent = "عبّي الإيميل وكلمة السر";
+    errEl.textContent =
+      "عبّي الإيميل وكلمة السر";
     return;
   }
 
-  const { data, error } = await sb.auth.signInWithPassword({
-    email,
-    password
-  });
-
-  if (error) {
-    errEl.textContent = "الإيميل أو كلمة السر غير صحيحة";
-    return;
-  }
-
-  // تسجيل الإيميل في سجل الاستخدام
   try {
-    await sb.from("customer_email_logs").insert({
-      email: email,
-      user_id: data.user?.id || null,
-      action: "login"
-    });
-  } catch (e) {
-    console.warn("تعذّر تسجيل الإيميل:", e);
-  }
+    /* ================= تسجيل الدخول في Appwrite ================= */
 
-  refreshAccountModalView();
+    const response = await fetch(
+      `${APPWRITE_ENDPOINT}/account/sessions/email`,
+      {
+        method: "POST",
+        credentials: "include",
+
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "X-Appwrite-Project":
+            APPWRITE_PROJECT_ID
+        },
+
+        body: JSON.stringify({
+          email: email,
+          password: password
+        })
+      }
+    );
+
+    const result =
+      await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(
+        result.message ||
+        "الإيميل أو كلمة السر غير صحيحة"
+      );
+    }
+
+    /* ================= جلب بيانات المستخدم من Appwrite ================= */
+
+    const userResponse = await fetch(
+      `${APPWRITE_ENDPOINT}/account`,
+      {
+        method: "GET",
+        credentials: "include",
+
+        headers: {
+          "Accept": "application/json",
+          "X-Appwrite-Project":
+            APPWRITE_PROJECT_ID
+        }
+      }
+    );
+
+    const userData =
+      await userResponse.json().catch(() => ({}));
+
+    if (!userResponse.ok) {
+      throw new Error(
+        userData.message ||
+        "تم تسجيل الدخول لكن تعذر جلب بيانات الحساب"
+      );
+    }
+
+    /* ================= حفظ جلسة Appwrite ================= */
+
+    window.appwriteCustomerSession = {
+      user: userData,
+      session: result
+    };
+
+    /* ================= تحديث واجهة الحساب ================= */
+
+    document.getElementById(
+      "authForms"
+    ).style.display = "none";
+
+    document.getElementById(
+      "accountLoggedIn"
+    ).style.display = "block";
+
+    const welcomeEl =
+      document.getElementById(
+        "accWelcomeText"
+      );
+
+    if (welcomeEl) {
+      const fullName =
+        userData.name ||
+        userData.prefs?.full_name ||
+        userData.email ||
+        "";
+
+      welcomeEl.textContent =
+        "👋 أهلاً " + fullName;
+    }
+
+    /* ================= تنظيف الحقول ================= */
+
+    document.getElementById(
+      "custLoginPassword"
+    ).value = "";
+
+    errEl.style.color = "#1FAE7A";
+    errEl.textContent =
+      "✅ تم تسجيل الدخول بنجاح";
+
+  } catch (error) {
+
+    console.error(
+      "APPWRITE LOGIN ERROR:",
+      error
+    );
+
+    errEl.style.color = "";
+    errEl.textContent =
+      "❌ " +
+      (error?.message ||
+        "الإيميل أو كلمة السر غير صحيحة");
+  }
 }
 
 /* تسجيل الدخول / إنشاء حساب تلقائي عبر Google (نفس الزر يخدم الحالتين) */

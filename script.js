@@ -1100,28 +1100,183 @@ async function refreshAccountModalView() {
 }
 
 async function handleCustomerSignup() {
-  const name = document.getElementById("custSignupName").value.trim();
-  const email = document.getElementById("custSignupEmail").value.trim();
-  const password = document.getElementById("custSignupPassword").value;
-  const errEl = document.getElementById("accountError");
+  const name = document
+    .getElementById("custSignupName")
+    .value
+    .trim();
+
+  const email = document
+    .getElementById("custSignupEmail")
+    .value
+    .trim();
+
+  const password = document
+    .getElementById("custSignupPassword")
+    .value;
+
+  const errEl =
+    document.getElementById("accountError");
+
   errEl.style.color = "";
   errEl.textContent = "";
 
-  if (!name || !email || !password) { errEl.textContent = "عبّي كل الحقول"; return; }
-  if (password.length < 6) { errEl.textContent = "كلمة السر لازم ٦ أحرف على الأقل"; return; }
+  if (!name || !email || !password) {
+    errEl.textContent = "عبّي كل الحقول";
+    return;
+  }
 
-  const { data, error } = await sb.auth.signUp({
-    email, password,
-    options: { data: { full_name: name } }
-  });
+  if (password.length < 6) {
+    errEl.textContent =
+      "كلمة السر لازم ٦ أحرف على الأقل";
+    return;
+  }
 
-  if (error) { errEl.textContent = "صار خطأ: " + error.message; return; }
+  try {
+    /* ================= إنشاء الحساب في Appwrite ================= */
 
-  if (data.session) {
-    refreshAccountModalView();
-  } else {
+    const userId =
+      "user_" +
+      Date.now() +
+      "_" +
+      Math.random()
+        .toString(36)
+        .slice(2, 10);
+
+    const createUserResponse =
+      await fetch(
+        `${APPWRITE_ENDPOINT}/account`,
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json",
+
+            "Accept":
+              "application/json",
+
+            "X-Appwrite-Project":
+              APPWRITE_PROJECT_ID
+          },
+
+          body: JSON.stringify({
+            userId: userId,
+            email: email,
+            password: password,
+            name: name
+          })
+        }
+      );
+
+    if (!createUserResponse.ok) {
+      const errorData =
+        await createUserResponse.json().catch(
+          () => ({})
+        );
+
+      throw new Error(
+        errorData.message ||
+        `فشل إنشاء الحساب (${createUserResponse.status})`
+      );
+    }
+
+    /* ================= تسجيل الدخول مباشرة ================= */
+
+    const loginResponse =
+      await fetch(
+        `${APPWRITE_ENDPOINT}/account/sessions/email`,
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json",
+
+            "Accept":
+              "application/json",
+
+            "X-Appwrite-Project":
+              APPWRITE_PROJECT_ID
+          },
+
+          body: JSON.stringify({
+            email: email,
+            password: password
+          })
+        }
+      );
+
+    if (!loginResponse.ok) {
+      const loginError =
+        await loginResponse.json().catch(
+          () => ({})
+        );
+
+      throw new Error(
+        loginError.message ||
+        "تم إنشاء الحساب لكن تعذّر تسجيل الدخول تلقائيًا"
+      );
+    }
+
+    const session =
+      await loginResponse.json();
+
+    /* حفظ بيانات حساب Appwrite */
+
+    window.appwriteCustomerSession =
+      session;
+
+    /* حفظ الاسم محليًا */
+
+    try {
+      localStorage.setItem(
+        "appwrite_customer_name",
+        name
+      );
+
+      localStorage.setItem(
+        "appwrite_customer_email",
+        email
+      );
+    } catch (e) {
+      console.warn(
+        "تعذر حفظ بيانات الحساب محليًا:",
+        e
+      );
+    }
+
     errEl.style.color = "#1FAE7A";
-    errEl.textContent = "تم إنشاء الحساب ✅ تحقق من إيميلك لتأكيد الحساب ثم سجّل دخول";
+    errEl.textContent =
+      "✅ تم إنشاء الحساب وتسجيل الدخول بنجاح";
+
+    /* تحديث واجهة الحساب */
+
+    if (typeof refreshAccountModalView === "function") {
+      await refreshAccountModalView();
+    }
+
+  } catch (error) {
+
+    console.error(
+      "APPWRITE SIGNUP ERROR:",
+      error
+    );
+
+    const message =
+      error?.message ||
+      "صار خطأ أثناء إنشاء الحساب";
+
+    if (
+      message.toLowerCase().includes("already") ||
+      message.includes("مستخدم") ||
+      message.includes("email")
+    ) {
+      errEl.textContent =
+        "⚠️ هذا الإيميل مستخدم مسبقًا";
+    } else {
+      errEl.textContent =
+        "❌ " + message;
+    }
   }
 }
 

@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ستايل روج | تسوّق أزياءك المفضلة</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lalezar&family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="marquee">
+  <div class="marquee-track">
+    <span data-i18n="marq1">🚚 شحن مجاني لأول طلب</span><span data-i18n="marq2">🔥 خصومات تصل ٤٠٪</span><span data-i18n="marq3">🆕 قطع جديدة أسبوعياً</span><span data-i18n="marq4">💬 اطلب مباشرة عبر واتساب</span>
+    <span data-i18n="marq1">🚚 شحن مجاني لأول طلب</span><span data-i18n="marq2">🔥 خصومات تصل ٤٠٪</span><span data-i18n="marq3">🆕 قطع جديدة أسبوعياً</span><span data-i18n="marq4">💬 اطلب مباشرة عبر واتساب</span>
+  </div>
+</div>
+
+<header>
+  <div class="logo-image">
+  <img src="logo/style-rouge.webp">
+</div>
+  <nav id="nav">
+    <button class="nav-close" onclick="closeNav()">✕</button>
+    <ul>
+      <li><a href="#gallery" data-i18n="nav_shop">تسوّق</a></li>
+      <li><a href="#deals" data-i18n="nav_deals">عروض</a></li>
+      <li><a href="#about" data-i18n="nav_about">من نحن</a></li>
+      <li><a href="#contact" data-i18n="nav_contact">تواصل معنا</a>
+      
+        <li><a href="#" class="menu-language-btn" onclick="openLanguageModal()"> لغة</a></li>
+    </ul>
+  </nav>
+  <div class="header-actions">
+    <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="تبديل المظهر" aria-label="تبديل المظهر">
+      <svg class="icon-moon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5 9 9 0 1 0 20.5 14.5Z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <svg class="icon-sun" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <circle cx="12" cy="12" r="4.3" stroke="currentColor" stroke-width="1.7"/>
+        <path d="M12 2.6v2.4M12 19v2.4M4.4 4.4l1.7 1.7M17.9 17.9l1.7 1.7M2.6 12H5M19 12h2.4M4.4 19.6l1.7-1.7M17.9 6.1l1.7-1.7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+      </svg>
+    </button>
+    <button class="cart-btn" onclick="openCart()" aria-label="السلة">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M6.5 8h11l-1 11.2a2 2 0 0 1-2 1.8H9.5a2 2 0 0 1-2-1.8L6.5 8Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+        <path d="M9 8V6.5a3 3 0 0 1 6 0V8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+      </svg>
+      <span class="cart-count" id="cartCount">0</span>
+    </button>
+    <button class="account-btn" id="accountBtn" onclick="openAccountModal()" title="حسابي" aria-label="حسابي">
+      <img id="accountAvatarImg" class="account-avatar-img" alt="">
+      <svg id="accountDefaultIcon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <circle cx="12" cy="8.2" r="3.4" stroke="currentColor" stroke-width="1.7"/>
+        <path d="M4.8 19.5c1.2-3.4 4-5.2 7.2-5.2s6 1.8 7.2 5.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+      </svg>
+    </button>
+    <button class="search-fab" id="searchFab" onclick="toggleSearchBar()" title="بحث" aria-label="بحث">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <circle cx="10.8" cy="10.8" r="6.3" stroke="currentColor" stroke-width="1.8"/>
+        <path d="m19.5 19.5-3.9-3.9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+    </button>
+    <button class="burger" onclick="toggleNav()" aria-label="القائمة">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+    </button>
+  </div>
+</header>
+
+<div class="search-bar" id="searchBar">
+  <div class="search-bar-inner">
+    <input type="text" id="globalSearchInput" class="search-input global-search" placeholder="🔍 بحث برقم المنتج أو الاسم" data-i18n-placeholder="search_placeholder" oninput="handleGlobalSearch(this.value)">
+    <button class="search-bar-close" onclick="toggleSearchBar()">✕</button>
+  </div>
+</div>
+
+<section class="hero">
+  <a href="#gallery" class="top-banner">
+    <img src="logo/style-rouge1.webp" class="logo-img">
+  </a>
+  <div class="hero-text">
+    <div class="hero-eyebrow" data-i18n="hero_eyebrow">تشكيلة ٢٠٢٦</div>
+    <h1 class="display" data-i18n="hero_title">ستايلك يبدأ<br>من هون</h1>
+    <p data-i18n="hero_desc">مئات القطع المختارة بعناية بأسعار تناسبك، وطلب سهل عبر واتساب بضغطة واحدة.</p>
+    <div class="hero-cta">
+      <a href="#gallery" class="btn-accent" data-i18n="hero_cta1">تسوّق الآن</a>
+      <a href="#deals" class="btn-ghost" data-i18n="hero_cta2">شاهد العروض</a>
+    </div>
+  </div>
+  <div class="hero-media">
+    <img src="female/13.webp"class="female-image" alt="فستان سهرة نبيتي بترتر ودانتيل" onerror="this.src='https://placehold.co/560x680/ffe1ea/d63d6e?font=raleway&text=New+Collection'" onclick="openLightbox(this.src, this.alt)">
+    <div class="hero-tag" data-i18n="hero_tag">الأكثر طلباً 🔥</div>
+  </div>
+</section>
+
+<div class="cat-strip">
+  <button class="cat-tile" data-cat="رجالي">
+    <img src="logo2/men.webp" onerror="this.src='https://placehold.co/160x160/f1eef5/241e2e?text=رجالي'" alt="رجالي">
+    <span data-i18n="cat_men">رجالي</span>
+  </button>
+  <button class="cat-tile" data-cat="نسائي">
+    <img src="logo2/female.webp" onerror="this.src='https://placehold.co/160x160/ffe1ea/d63d6e?text=نسائي'" alt="نسائي">
+    <span data-i18n="cat_women">نسائي</span>
+  </button>
+  <button class="cat-tile" data-cat="أطفال">
+    <img src="logo2/kids.webp" onerror="this.src='https://placehold.co/160x160/eafaf1/1fae7a?text=أطفال'" alt="أطفال">
+    <span data-i18n="cat_kids">أطفال</span>
+  </button>
+  <button class="cat-tile" data-cat="أحذية">
+    <img src="logo2/shoes.webp" onerror="this.src='https://placehold.co/160x160/fff3e0/d68b3d?text=أحذية'" alt="أحذية">
+    <span data-i18n="cat_shoes">أحذية</span>
+  </button>
+  <button class="cat-tile" data-cat="إكسسوارات">
+    <img src="logo2/accessories.webp" onerror="this.src='https://placehold.co/160x160/eaf7f1/1fae7a?text=إكسسوارات'" alt="إكسسوارات">
+    <span data-i18n="cat_acc">إكسسوارات</span>
+  </button>
+</div>
+
+<div class="promo-strip" id="deals">
+  <div class="promo-card"><b data-i18n="promo1_t">خصم يصل إلى ٤٠٪</b><span data-i18n="promo1_d">على القطع المختارة هذا الأسبوع</span></div>
+  <div class="promo-card"><b data-i18n="promo2_t">اشترِ ٢ واحصل على الثالثة هدية</b><span data-i18n="promo2_d">على تشكيلة الإكسسوارات</span></div>
+  <div class="promo-card"><b data-i18n="promo3_t">توصيل مجاني</b><span data-i18n="promo3_d">للطلبات فوق ٥٠$</span></div>
+</div>
+
+<section class="section" id="gallery">
+  <div class="section-head">
+    <div class="eyebrow" data-i18n="gal_eyebrow">المعرض</div>
+    <h2 class="display" data-i18n="gal_title">اكتشف تشكيلتنا</h2>
+  </div>
+
+  <div class="toolbar">
+    <div class="filters" id="filters"></div>
+    <div class="toolbar-right">
+      <select class="sort-select" id="sortSelect" onchange="renderGallery()">
+        <option value="default" data-i18n="sort_default">الترتيب: افتراضي</option>
+        <option value="price-asc" data-i18n="sort_asc">السعر: من الأقل للأعلى</option>
+        <option value="price-desc" data-i18n="sort_desc">السعر: من الأعلى للأقل</option>
+      </select>
+    </div>
+  </div>
+  <div class="subfilters" id="subfilters"></div>
+
+  <div class="gallery" id="gallery-grid"></div>
+</section>
+
+<section class="signature" id="about">
+  <h2 class="display" data-i18n="sig_title">ستايلك، قرارك</h2>
+  <p data-i18n="sig_desc">في ستايل روج منختار كل قطعة بعين تهتم بالتفاصيل، ونوصلها لباب بيتك بأسهل طريقة. جودة تستمر، وأسعار تناسب الكل.</p>
+</section>
+
+<footer id="contact">
+  <div class="footer-grid">
+    <div>
+      <h4 data-i18n="footer_brand">ستايل روج</h4>
+      <p data-i18n="footer_brand_desc">تسوّق أزياء رجالي، نسائي، وبناتي بأسلوب عصري وخدمة طلب مباشرة عبر واتساب.</p>
+    </div>
+    <div>
+      <h4 data-i18n="footer_links">روابط سريعة</h4>
+      <a href="#gallery" data-i18n="nav_shop">تسوّق</a><br>
+      <a href="#deals" data-i18n="nav_deals">عروض</a><br>
+      <a href="#about" data-i18n="nav_about">من نحن</a>
+    </div>
+    <div>
+      <h4 data-i18n="footer_contact">تواصل معنا</h4>
+      <p><span data-i18n="footer_wa">واتساب:</span></p>
+      <p>🇮🇶 <a href="https://wa.me/9647511429970" target="_blank">+964 751 1429970</a> — <span data-i18n="footer_country">العراق</span></p>
+      <p>🇸🇾 <a href="https://wa.me/963984959066" target="_blank">+963 984 959066</a> — <span data-i18n="footer_country2">سوريا</span></p>
+      <p><span data-i18n="footer_owner">المالك:</span> .....</p>
+      <p><span data-i18n="footer_admin">المسؤول  :</span> .....</p>
+    </div>
+  </div>
+  <div class="footer-bottom" data-i18n="footer_bottom">© 2026 ستايل روج – جميع الحقوق محفوظة</div>
+</footer>
+
+<div class="img-lightbox" id="imgLightbox" onclick="closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+  <img id="lightboxImg" src="" alt="" onclick="event.stopPropagation()">
+</div>
+
+<!-- نافذة الحساب (تسجيل دخول / إنشاء حساب / طلباتي) -->
+<div class="account-modal" id="accountModal" onclick="closeAccountModal()">
+  <div class="account-modal-box" onclick="event.stopPropagation()">
+    <div class="camera-modal-head">
+      <h3 id="accountModalTitle">أهلاً فيك 👋</h3>
+      <button class="lightbox-close cam-close" onclick="closeAccountModal()">✕</button>
+    </div>
+
+    <div class="acc-modal-subtitle" id="accountModalSubtitle"></div>
+
+    <!-- حالة: غير مسجل دخول -->
+    <div id="authForms">
+      <div class="account-tabs">
+        <button class="account-tab active" id="tabLoginBtn" onclick="switchAuthTab('login')">تسجيل الدخول</button>
+        <button class="account-tab" id="tabSignupBtn" onclick="switchAuthTab('signup')">حساب جديد</button>
+      </div>
+
+      <div id="loginPane">
+        <div class="acc-field">
+          <label>الإيميل</label>
+          <input type="email" id="custLoginEmail" placeholder="you@example.com" autocomplete="username">
+        </div>
+        <div class="acc-field acc-pass-wrap">
+          <label>كلمة السر</label>
+          <input type="password" id="custLoginPassword" placeholder="••••••••" autocomplete="current-password">
+          <button type="button" class="acc-pass-toggle" onclick="toggleAccPassword('custLoginPassword', this)" aria-label="إظهار/إخفاء كلمة السر">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.6"/></svg>
+          </button>
+        </div>
+        <div class="acc-row-between">
+          <span></span>
+          <button type="button" class="acc-forgot" onclick="handleForgotPassword()">نسيت كلمة السر؟</button>
+        </div>
+        <button class="acc-btn btn-accent" onclick="handleCustomerLogin()">تسجيل الدخول</button>
+      </div>
+
+      <div id="signupPane" style="display:none;">
+        <div class="acc-field">
+          <label>الاسم</label>
+          <input type="text" id="custSignupName" placeholder="اسمك الكامل">
+        </div>
+        <div class="acc-field">
+          <label>الإيميل</label>
+          <input type="email" id="custSignupEmail" placeholder="you@example.com" autocomplete="username">
+        </div>
+        <div class="acc-field acc-pass-wrap">
+          <label>كلمة السر</label>
+          <input type="password" id="custSignupPassword" placeholder="٦ أحرف على الأقل" autocomplete="new-password">
+          <button type="button" class="acc-pass-toggle" onclick="toggleAccPassword('custSignupPassword', this)" aria-label="إظهار/إخفاء كلمة السر">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.6"/></svg>
+          </button>
+        </div>
+        <button class="acc-btn btn-accent" onclick="handleCustomerSignup()">إنشاء حساب</button>
+      </div>
+
+      <div class="acc-divider">أو تابع عبر</div>
+      <div class="acc-social-row">
+        <button type="button" class="acc-google-btn" onclick="handleGoogleAuth()">
+          <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6 29.6 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.2-.1-2.4-.4-3.5Z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.6 15.9 18.9 13 24 13c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6 29.6 4 24 4 16 4 9.1 8.5 6.3 14.7Z"/><path fill="#4CAF50" d="M24 44c5.5 0 10.4-1.9 14.2-5.1l-6.6-5.4C29.6 35.4 27 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.6 5.1C9 39.4 15.9 44 24 44Z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.2 4.2-4.1 5.5l6.6 5.4C41.6 35.9 44 30.5 44 24c0-1.2-.1-2.4-.4-3.5Z"/></svg>
+          <span>المتابعة عبر Google</span>
+        </button>
+      </div>
+
+      <div class="acc-error" id="accountError"></div>
+    </div>
+
+    <!-- حالة: مسجل دخول -->
+    <div id="accountLoggedIn" style="display:none;">
+      <div class="acc-welcome" id="accWelcomeText"></div>
+
+      <div class="acc-section-title">طلباتي السابقة</div>
+      <div class="acc-orders-list" id="accOrdersList"><div class="acc-empty">جاري التحميل...</div></div>
+      <button class="btn-ghost-acc acc-btn" onclick="handleCustomerLogout()">تسجيل الخروج</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay" onclick="closeAllPanels()"></div>
+<div class="cart-drawer" id="cartDrawer">
+  <div class="cart-head">
+    <h3 data-i18n="cart_title">سلة المشتريات</h3>
+    <button class="cart-close" onclick="closeCart()">✕</button>
+  </div>
+  <div class="cart-items" id="cartItems"></div>
+  <div class="cart-footer">
+    <div class="cart-total-row"><span data-i18n="cart_total">الإجمالي</span><span id="cartTotal">0$</span></div>
+    <div class="country-select" id="countrySelect">
+      <button class="country-opt active" data-country="iq">🇮🇶 <span data-i18n="country_iq">العراق</span></button>
+      <button class="country-opt" data-country="sy">🇸🇾 <span data-i18n="country_sy">سوريا</span></button>
+    </div>
+    <button class="wa-btn" id="waBtn" onclick="sendWhatsAppOrder()">
+      <span>📲</span><span data-i18n="cart_wa_btn">إرسال الطلب عبر واتساب</span>
+    </button>
+    <div class="cart-note" data-i18n="cart_note">سيتم فتح واتساب مع تفاصيل الفاتورة وروابط صور القطع المختارة لتأكيد الطلب.</div>
+  </div>
+</div>
+
+<div class="service-modal" id="serviceModal" onclick="closeServiceModal()">
+  <div class="service-modal-box" onclick="event.stopPropagation()">
+    <div class="service-modal-icon">🚧</div>
+    <h3 data-i18n="service_off_title">الخدمة متوقفة مؤقتاً</h3>
+    <p data-i18n="service_off_msg">هذه صفحة تجريبية، وقريباً رح توفر جميع الخدمات.</p>
+    <button class="btn-accent" onclick="closeServiceModal()" data-i18n="service_off_ok">تم</button>
+  </div>
+</div>
+
+<!-- نافذة الإعدادات -->
+<div class="settings-modal" id="settingsModal" onclick="closeSettingsModal()">
+  <div class="settings-modal-box" onclick="event.stopPropagation()">
+    <div class="camera-modal-head">
+      <h3 data-i18n="settings_title">الإعدادات</h3>
+      <button class="lightbox-close cam-close" onclick="closeSettingsModal()">✕</button>
+    </div>
+    <button class="settings-row" onclick="openLanguageModal()">
+      <span class="settings-row-label">🌐 <span data-i18n="settings_language">اللغة</span></span>
+      <span class="settings-row-right"><span class="settings-row-value" id="currentLangLabel">AR</span><span class="settings-row-arrow">‹</span></span>
+    </button>
+  </div>
+</div>
+
+<!-- نافذة اختيار اللغة -->
+<div class="language-modal" id="languageModal" onclick="closeLanguageModal()">
+  <div class="settings-modal-box" onclick="event.stopPropagation()">
+    <div class="camera-modal-head">
+      <h3 data-i18n="settings_language">اللغة</h3>
+      <button class="lightbox-close cam-close" onclick="closeLanguageModal()">✕</button>
+    </div>
+    <button class="lang-option" data-lang="ar" onclick="selectLanguageOption('ar')"><span>العربية</span><span class="lang-check">✓</span></button>
+    <button class="lang-option" data-lang="en" onclick="selectLanguageOption('en')"><span>English</span><span class="lang-check">✓</span></button>
+    <button class="lang-option" data-lang="ku" onclick="selectLanguageOption('ku')"><span>Kurd</span><span class="lang-check">✓</span></button>
+    <button class="lang-option" data-lang="tr" onclick="selectLanguageOption('tr')"><span>Türkçe</span><span class="lang-check">✓</span></button>
+  </div>
+</div>
+
+<!-- نافذة تواصل معنا (واتساب + انستغرام) -->
+<div class="contact-modal" id="contactModal" onclick="closeContactModal()">
+  <div class="contact-modal-box" onclick="event.stopPropagation()">
+    <button class="lightbox-close cam-close" onclick="closeContactModal()" style="float:left">✕</button>
+    <h3 data-i18n="contact_title">تواصل معنا</h3>
+<div class="contact-group">
+  <div class="contact-group-title">
+    <img src="logo2/whatsapp.png" class="contact-title-icon" alt="واتساب">
+    <span data-i18n="contact_wa_group">واتساب</span>
+  </div>
+
+<a class="contact-link wa" href="https://wa.me/9647511429970" target="_blank" rel="noopener">
+  <img src="logo2/whatsapp.png" class="contact-logo" alt="العراق">
+  <span data-i18n="footer_country">العراق</span> — 751 1429970
+</a>
+
+<a class="contact-link wa" href="https://wa.me/963984959066" target="_blank" rel="noopener">
+  <img src="logo2/whatsapp.png" class="contact-logo" alt="سوريا">
+  <span data-i18n="footer_country2">سوريا</span> — 984 959066
+</a>
+</div>
+<div class="contact-group">
+  <div class="contact-group-title">
+    <img src="logo2/instagram.png" class="contact-title-icon" alt="انستغرام">
+    <span data-i18n="contact_ig_group">انستغرام</span>
+  </div>
+
+  <a class="contact-link ig" href="https://www.instagram.com/awar.teter/" target="_blank" rel="noopener">
+    <img src="logo2/instagram.png" class="contact-logo" alt="حساب دعم فني">
+    <span data-i18n="contact_ig_iq">حساب دعم فني</span>
+  </a>
+
+  <a class="contact-link ig" href="https://www.instagram.com/style__roj/" target="_blank" rel="noopener">
+    <img src="logo2/instagram.png" class="contact-logo" alt="حساب style_roj">
+    <span data-i18n="contact_ig_sy">حساب style_roj</span>
+  </a>
+</div>
+  </div>
+</div>
+
+<!-- نافذة البحث بالصورة (كاميرا) -->
+<div class="camera-modal" id="cameraModal" onclick="closeCameraModal()">
+  <div class="camera-modal-box" onclick="event.stopPropagation()">
+    <div class="camera-modal-head">
+      <h3 data-i18n="camera_title">🔎 دوّر بالصورة</h3>
+      <button class="lightbox-close cam-close" onclick="closeCameraModal()">✕</button>
+    </div>
+    <p class="camera-hint" data-i18n="camera_hint">صوّر القطعة أو ارفع صورتها، ورح نلقالك أقرب القطع الموجودة بمتجرنا. (مطابقة تقريبية حسب الألوان والشكل العام)</p>
+    <div class="camera-upload-row">
+      <label class="camera-upload-btn">
+        📷 <span data-i18n="camera_take">التقاط صورة</span>
+        <input type="file" accept="image/*" capture="environment" id="cameraCaptureInput" onchange="handleCameraFile(this.files[0])">
+      </label>
+      <label class="camera-upload-btn secondary">
+        🖼️ <span data-i18n="camera_upload">رفع من المعرض</span>
+        <input type="file" accept="image/*" id="cameraUploadInput" onchange="handleCameraFile(this.files[0])">
+      </label>
+    </div>
+    <div class="camera-preview" id="cameraPreview"></div>
+    <div class="camera-status" id="cameraStatus"></div>
+    <div class="camera-results" id="cameraResults"></div>
+  </div>
+</div>
+<canvas id="visionCanvas" width="8" height="8" style="display:none"></canvas>
+<!-- شريط تنقّل سفلي (موبايل) -->
+<div class="bottom-nav">
+
+<button class="bnav-btn" onclick="openContactModal()" aria-label="تواصل معنا">
+  <span class="bnav-icon">
+    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M21 11.5c0 4.14-3.94 7.5-8.8 7.5-1.02 0-2-.14-2.92-.4L4 20l1.24-3.72C3.86 15.14 3 13.4 3 11.5 3 7.36 6.94 4 11.8 4S21 7.36 21 11.5Z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="8.6" cy="11.5" r="1" fill="currentColor"/>
+      <circle cx="12" cy="11.5" r="1" fill="currentColor"/>
+      <circle cx="15.4" cy="11.5" r="1" fill="currentColor"/>
+    </svg>
+  </span>
+</button>
+<button class="bnav-btn" onclick="scrollToTop()" aria-label="الرئيسية">
+  <span class="bnav-icon">
+    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M4 10.5 12 4l8 6.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M6 9.5V19a1 1 0 0 0 1 1h3.2v-4.6a1.8 1.8 0 0 1 1.8-1.8v0a1.8 1.8 0 0 1 1.8 1.8V20H17a1 1 0 0 0 1-1V9.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </span>
+</button>
+<button class="bnav-btn bnav-camera" onclick="openCameraModal()" aria-label="بحث بالصورة">
+  <span class="bnav-icon">
+    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M4 8.6A1.6 1.6 0 0 1 5.6 7h2L8.7 5.4h6.6L16.4 7h2A1.6 1.6 0 0 1 20 8.6V17a1.6 1.6 0 0 1-1.6 1.6H5.6A1.6 1.6 0 0 1 4 17V8.6Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+      <circle cx="12" cy="12.3" r="3.3" stroke="currentColor" stroke-width="1.7"/>
+    </svg>
+  </span>
+</button>
+</div>
+
+<script>
+(function(){
+  const nav = document.querySelector(".bottom-nav");
+  if (!nav) return;
+
+  /* تصغير ناعم للشريط أثناء التمرير للأسفل، ورجوعه لحجمه عند التوقف أو الصعود للأعلى */
+  let lastY = window.scrollY;
+  let stopTimer = null;
+
+  function onScroll(){
+    const y = window.scrollY;
+
+    if (y > lastY && y > 80) {
+      nav.classList.add("nav-compact");
+    } else if (y < lastY) {
+      nav.classList.remove("nav-compact");
+    }
+    lastY = y;
+
+    clearTimeout(stopTimer);
+    stopTimer = setTimeout(() => nav.classList.remove("nav-compact"), 650);
+  }
+  window.addEventListener("scroll", onScroll, { passive: true });
+
+  /* نبضة/توهج ناعمة عند الضغط على أي زر */
+  nav.querySelectorAll(".bnav-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      btn.classList.remove("bnav-pop");
+      void btn.offsetWidth; // إعادة تشغيل الأنيميشن
+      btn.classList.add("bnav-pop");
+    });
+    btn.addEventListener("animationend", (e) => {
+      if (e.target === btn) btn.classList.remove("bnav-pop");
+    });
+  });
+})();
+
+(function(){
+  /* نفس فكرة التصغير الناعم + التوهج عند الضغط لأزرار الهيدر العلوي */
+  const header = document.querySelector("header");
+  if (!header) return;
+
+  let lastY = window.scrollY;
+  let stopTimer = null;
+
+  function onScroll(){
+    const y = window.scrollY;
+    if (y > lastY && y > 40) {
+      header.classList.add("head-compact");
+    } else if (y < lastY || y <= 40) {
+      header.classList.remove("head-compact");
+    }
+    lastY = y;
+
+    clearTimeout(stopTimer);
+    stopTimer = setTimeout(() => header.classList.remove("head-compact"), 650);
+  }
+  window.addEventListener("scroll", onScroll, { passive: true });
+
+  header.querySelectorAll(".theme-btn, .cart-btn, .search-fab, .burger, .settings-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      btn.classList.remove("bnav-pop");
+      void btn.offsetWidth;
+      btn.classList.add("bnav-pop");
+    });
+    btn.addEventListener("animationend", (e) => {
+      if (e.target === btn) btn.classList.remove("bnav-pop");
+    });
+  });
+})();
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

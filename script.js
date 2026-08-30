@@ -251,7 +251,24 @@ applyTheme(localStorage.getItem("boutique_theme") || "light");
 /* ============ الاتصال بـ Supabase ============ */
 const SUPABASE_URL = "https://gzhgokztibcctmmljorf.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_7bfT9JW5Y7aMRR211n0GVA_Blfp1UDx";
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const sb = supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY
+);
+
+/* ============ Appwrite التجريبي ============ */
+
+const APPWRITE_ENDPOINT =
+  "https://fra.cloud.appwrite.io/v1";
+
+const APPWRITE_PROJECT_ID =
+  "6a9321f3002b6c1004a9";
+
+const APPWRITE_DATABASE_ID =
+  "6a93224c002e35f858b8";
+
+const APPWRITE_TABLE_ID =
+  "Products";
 
 /* مفتاح يحفظ إشارة إنه في طلب فاتورة معلّق بانتظار تسجيل الدخول (يستخدم خصوصاً
    مع تسجيل الدخول عبر Google، لأنه بيعمل تحويل كامل للصفحة ورجوع منها) */
@@ -536,41 +553,123 @@ const HIDDEN_PRODUCT_IDS = [];
 let allProducts = [];
 let products = [];
 
-/* يجيب المنتجات من جدول products بـ Supabase. إذا صار خطأ اتصال (مثلاً النت واقف)
-   يرجع يستخدم النسخة الاحتياطية allProductsFallback مشان الموقع يضل شغال. */
 async function loadProducts() {
   try {
-    const { data, error } = await sb
-      .from("products")
-      .select("*")
-      .order("id", { ascending: true });
-    if (error || !data || !data.length) throw error || new Error("empty");
-    allProducts = data.map(row => ({
-      id: row.id,
-      name: row.name,
-      cat: row.cat,
-      sub: row.sub,
-      price: Number(row.price),
-      oldPrice: row.old_price !== null && row.old_price !== undefined ? Number(row.old_price) : undefined,
-      color: row.color || undefined,
-      img: row.img,
-      badge:
-  row.badge === "جديد" &&
-  row.new_until &&
-  new Date(row.new_until) > new Date()
-    ? "جديد"
-    : row.badge === "جديد"
-      ? undefined
-      : (row.badge || undefined),
+    const rows = [];
+    const limit = 100;
+    let offset = 0;
 
-newUntil: row.new_until || null,
-      sale: !!row.sale,
+    while (true) {
+      const url =
+        `${APPWRITE_ENDPOINT}/tablesdb/` +
+        `${APPWRITE_DATABASE_ID}/tables/` +
+        `${APPWRITE_TABLE_ID}/rows` +
+        `?limit=${limit}&offset=${offset}&total=false`;
+
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          "Accept": "application/json",
+          "X-Appwrite-Project": APPWRITE_PROJECT_ID
+        }
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(
+          `Appwrite HTTP ${response.status}: ${errorText}`
+        );
+      }
+
+      const result = await response.json();
+
+      const batch = Array.isArray(result.rows)
+        ? result.rows
+        : [];
+
+      rows.push(...batch);
+
+      if (batch.length < limit) break;
+
+      offset += limit;
+    }
+
+    if (!rows.length) {
+      throw new Error("Appwrite لم يرجع أي منتجات");
+    }
+
+    allProducts = rows.map(row => ({
+      id:
+        row.product_id !== undefined &&
+        row.product_id !== null
+          ? Number(row.product_id)
+          : Number(row.id),
+
+      name: row.name || "",
+
+      cat:
+        row.category ||
+        row.cat ||
+        "",
+
+      sub:
+        row.subcategory ||
+        row.sub ||
+        "",
+
+      price:
+        Number(row.price || 0),
+
+      oldPrice:
+        row.old_price !== undefined &&
+        row.old_price !== null
+          ? Number(row.old_price)
+          : undefined,
+
+      color:
+        row.color ||
+        undefined,
+
+      img:
+        row.image ||
+        row.img ||
+        "",
+
+      badge:
+        row.badge === "جديد" &&
+        row.new_until &&
+        new Date(row.new_until) > new Date()
+          ? "جديد"
+          : row.badge === "جديد"
+            ? undefined
+            : (row.badge || undefined),
+
+      newUntil:
+        row.new_until ||
+        null,
+
+      sale:
+        !!row.sale
     }));
+
+    console.log(
+      `✅ Appwrite: تم تحميل ${allProducts.length} منتج`
+    );
+
   } catch (e) {
-    console.warn("تعذّر جلب المنتجات من Supabase، تم استخدام النسخة الاحتياطية:", e);
+    console.warn(
+      "تعذّر جلب المنتجات من Appwrite، تم استخدام النسخة الاحتياطية:",
+      e
+    );
+
     allProducts = allProductsFallback;
   }
-  products = allProducts.filter(p => !HIDDEN_CATEGORIES.includes(p.cat) && !HIDDEN_PRODUCT_IDS.includes(p.id));
+
+  products = allProducts.filter(
+    p =>
+      !HIDDEN_CATEGORIES.includes(p.cat) &&
+      !HIDDEN_PRODUCT_IDS.includes(p.id)
+  );
 }
 
 /* يسجّل زيارة جديدة بجدول visits (بدون ما يوقف تحميل الموقع لو صار خطأ) */

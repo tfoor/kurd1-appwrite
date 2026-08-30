@@ -1371,10 +1371,34 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
   <script>
-    const SUPABASE_URL = "https://gzhgokztibcctmmljorf.supabase.co";
-    const SUPABASE_ANON_KEY = "sb_publishable_7bfT9JW5Y7aMRR211n0GVA_Blfp1UDx";
-    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const SUPABASE_URL =
+      "https://gzhgokztibcctmmljorf.supabase.co";
+
+    const SUPABASE_ANON_KEY =
+      "sb_publishable_7bfT9JW5Y7aMRR211n0GVA_Blfp1UDx";
+
+    const sb = supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_ANON_KEY
+    );
+
+    /* ============ Appwrite ============ */
+
+    const APPWRITE_ENDPOINT =
+      "https://fra.cloud.appwrite.io/v1";
+
+    const APPWRITE_PROJECT_ID =
+      "6a9321f3002b6c1004a9";
+
+    const APPWRITE_DATABASE_ID =
+      "6a93224c002e35f858b8";
+
+    const APPWRITE_TABLE_ID =
+      "Products";
+    const APPWRITE_BUCKET_ID =
+      "6a933a1d001e12834551";
 
     let allProducts = [];
     let activeCat = "الكل";
@@ -1458,18 +1482,125 @@
       if (!isProducts) loadOrders();
     }
 
-    /* ============ جلب المنتجات ============ */
+    /* ============ جلب المنتجات من Appwrite ============ */
     async function loadProducts() {
-      const { data, error } = await sb.from("products").select("*").order("id", { ascending: true });
-      if (error) {
-        document.getElementById("productList").innerHTML = `<div class="empty-state">صار خطأ بجلب المنتجات: ${error.message}</div>`;
-        return;
+      try {
+        const rows = [];
+        const limit = 100;
+        let offset = 0;
+
+        while (true) {
+          const url =
+            `${APPWRITE_ENDPOINT}/tablesdb/` +
+            `${APPWRITE_DATABASE_ID}/tables/` +
+            `${APPWRITE_TABLE_ID}/rows` +
+            `?limit=${limit}&offset=${offset}&total=false`;
+
+          const response = await fetch(url, {
+            method: "GET",
+            headers: {
+              Accept: "application/json",
+              "X-Appwrite-Project": APPWRITE_PROJECT_ID
+            }
+          });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(
+              `Appwrite HTTP ${response.status}: ${errorText}`
+            );
+          }
+
+          const result = await response.json();
+
+          const batch = Array.isArray(result.rows)
+            ? result.rows
+            : [];
+
+          rows.push(...batch);
+
+          if (batch.length < limit) {
+            break;
+          }
+
+          offset += limit;
+        }
+
+        allProducts = rows.map(row => ({
+          id:
+            row.product_id !== undefined &&
+              row.product_id !== null
+              ? Number(row.product_id)
+              : Number(row.id),
+
+          name: row.name || "",
+
+          cat:
+            row.category ||
+            row.cat ||
+            "",
+
+          sub:
+            row.subcategory ||
+            row.sub ||
+            "",
+
+          price:
+            Number(row.price || 0),
+
+          old_price:
+            row.old_price !== undefined &&
+              row.old_price !== null
+              ? Number(row.old_price)
+              : null,
+
+          color:
+            row.color ||
+            null,
+
+          img:
+            row.image ||
+            row.img ||
+            "",
+
+          badge:
+            row.badge ||
+            null,
+
+          new_until:
+            row.new_until ||
+            null,
+
+          sale:
+            !!row.sale
+        }));
+
+        document.getElementById("productsCount").textContent =
+          allProducts.length;
+
+        document.getElementById("navProductsCount").textContent =
+          allProducts.length;
+
+        console.log(
+          `✅ Appwrite: تم تحميل ${allProducts.length} منتج`
+        );
+
+        buildCatTabs();
+        renderProductList();
+
+      } catch (error) {
+
+        console.error(
+          "APPWRITE PRODUCTS ERROR:",
+          error
+        );
+
+        document.getElementById("productList").innerHTML =
+          `<div class="empty-state">
+        ❌ فشل جلب المنتجات من Appwrite:
+        ${error.message}
+      </div>`;
       }
-      allProducts = data || [];
-      document.getElementById("productsCount").textContent = allProducts.length;
-      document.getElementById("navProductsCount").textContent = allProducts.length;
-      buildCatTabs();
-      renderProductList();
     }
 
     /* ============ بناء تبويبات الفئات (تلقائياً من المنتجات الموجودة) ============ */

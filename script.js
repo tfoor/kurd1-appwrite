@@ -1419,24 +1419,57 @@ async function handleCustomerLogin() {
   }
 }
 
-/* تسجيل الدخول / إنشاء حساب تلقائي عبر Google (نفس الزر يخدم الحالتين) */
+/* تسجيل الدخول عبر Google باستخدام Appwrite */
 async function handleGoogleAuth() {
-  const errEl = document.getElementById("accountError");
-  if (errEl) { errEl.style.color = ""; errEl.textContent = ""; }
+  const errEl =
+    document.getElementById("accountError");
 
-  // نحفظ إشارة إنه في طلب معلّق، لأنه تسجيل الدخول عبر Google بيعمل تحويل كامل لخارج الصفحة ورجوع منها
-  if (accountModalContext === "checkout") {
-    try { localStorage.setItem(PENDING_CHECKOUT_KEY, "1"); } catch (e) {}
+  if (errEl) {
+    errEl.style.color = "";
+    errEl.textContent = "";
   }
-  saveCartToStorage();
 
-  const { error } = await sb.auth.signInWithOAuth({
-    provider: "google",
-    options: { redirectTo: window.location.href.split("#")[0].split("?")[0] }
-  });
+  try {
+    if (typeof saveCartToStorage === "function") {
+      saveCartToStorage();
+    }
 
-  if (error && errEl) {
-    errEl.textContent = "تعذّر تسجيل الدخول عبر Google، حاول لاحقاً";
+    if (
+      typeof accountModalContext !== "undefined" &&
+      accountModalContext === "checkout"
+    ) {
+      try {
+        localStorage.setItem(
+          PENDING_CHECKOUT_KEY,
+          "1"
+        );
+      } catch (e) {}
+    }
+
+    const successUrl =
+      window.location.origin +
+      window.location.pathname;
+
+    const failureUrl = successUrl;
+
+    const googleUrl =
+      `${APPWRITE_ENDPOINT}/account/sessions/oauth2/google` +
+      `?project=${encodeURIComponent(APPWRITE_PROJECT_ID)}` +
+      `&success=${encodeURIComponent(successUrl)}` +
+      `&failure=${encodeURIComponent(failureUrl)}`;
+
+    window.location.href = googleUrl;
+
+  } catch (error) {
+    console.error(
+      "APPWRITE GOOGLE AUTH ERROR:",
+      error
+    );
+
+    if (errEl) {
+      errEl.textContent =
+        "❌ تعذّر تسجيل الدخول عبر Google، حاول لاحقًا";
+    }
   }
 }
 
@@ -1465,9 +1498,62 @@ async function handleForgotPassword() {
 }
 
 async function handleCustomerLogout() {
-  await sb.auth.signOut();
-  customerSession = null;
-  refreshAccountModalView();
+  try {
+    const response = await fetch(
+      `${APPWRITE_ENDPOINT}/account/sessions/current`,
+      {
+        method: "DELETE",
+        credentials: "include",
+
+        headers: {
+          "Accept": "application/json",
+          "X-Appwrite-Project": APPWRITE_PROJECT_ID
+        }
+      }
+    );
+
+    if (!response.ok && response.status !== 401) {
+      const errorData =
+        await response.json().catch(() => ({}));
+
+      throw new Error(
+        errorData.message ||
+        "تعذر تسجيل الخروج"
+      );
+    }
+
+    // مسح جلسة Appwrite المحلية
+    window.appwriteCustomerSession = null;
+
+    // مسح بيانات الحساب المحفوظة محليًا
+    try {
+      localStorage.removeItem("appwrite_customer_name");
+      localStorage.removeItem("appwrite_customer_email");
+    } catch (e) {
+      console.warn(
+        "تعذر مسح بيانات الحساب المحلية:",
+        e
+      );
+    }
+
+    // تحديث نافذة الحساب
+    await refreshAccountModalView();
+
+  } catch (error) {
+
+    console.error(
+      "APPWRITE LOGOUT ERROR:",
+      error
+    );
+
+    const errEl =
+      document.getElementById("accountError");
+
+    if (errEl) {
+      errEl.textContent =
+        "❌ تعذر تسجيل الخروج، حاول مرة ثانية";
+    }
+  }
 }
 
 /* ينتظر تحميل قائمة المنتجات (لازمة لتجهيز نص رسالة الفاتورة) */

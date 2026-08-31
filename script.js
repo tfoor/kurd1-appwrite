@@ -246,16 +246,6 @@ function toggleTheme() {
 }
 applyTheme(localStorage.getItem("boutique_theme") || "light");
 
-
-
-/* ============ الاتصال بـ Supabase ============ */
-const SUPABASE_URL = "https://gzhgokztibcctmmljorf.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_7bfT9JW5Y7aMRR211n0GVA_Blfp1UDx";
-const sb = supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_ANON_KEY
-);
-
 /* ============ Appwrite التجريبي ============ */
 
 const APPWRITE_ENDPOINT =
@@ -274,17 +264,65 @@ const APPWRITE_TABLE_ID =
    مع تسجيل الدخول عبر Google، لأنه بيعمل تحويل كامل للصفحة ورجوع منها) */
 const PENDING_CHECKOUT_KEY = "boutique_pending_checkout";
 
-/* يراقب حالة تسجيل الدخول باستمرار (بما فيها الرجوع من تسجيل الدخول عبر Google) */
-sb.auth.onAuthStateChange((event, session) => {
-  customerSession = session || null;
-  updateAccountButtonAvatar(customerSession);
-  if (event === "SIGNED_IN") {
+/* ============ مراقبة جلسة Appwrite ============ */
+
+async function syncAppwriteSession() {
+  try {
+    const response = await fetch(
+      `${APPWRITE_ENDPOINT}/account`,
+      {
+        method: "GET",
+        credentials: "include",
+        headers: {
+          "Accept": "application/json",
+          "X-Appwrite-Project": APPWRITE_PROJECT_ID
+        }
+      }
+    );
+
+    if (response.ok) {
+      const user = await response.json();
+
+      customerSession = {
+        user: user
+      };
+
+      updateAccountButtonAvatar(customerSession);
+
+      return customerSession;
+    }
+
+    customerSession = null;
+    updateAccountButtonAvatar(null);
+
+  } catch (error) {
+    console.warn(
+      "APPWRITE SESSION ERROR:",
+      error
+    );
+
+    customerSession = null;
+    updateAccountButtonAvatar(null);
+  }
+
+  return null;
+}
+
+/* فحص الجلسة عند فتح الموقع */
+syncAppwriteSession().then((session) => {
+  if (session) {
     completePendingCheckoutIfAny();
   }
 });
-// نعكس حالة تسجيل الدخول على زر الحساب بالهيدر فوراً عند فتح الصفحة (لو الجلسة محفوظة من زيارة سابقة)
-sb.auth.getSession().then(({ data }) => updateAccountButtonAvatar(data && data.session ? data.session : null));
 
+/* فحص الجلسة عند الرجوع للصفحة */
+window.addEventListener("focus", async () => {
+  const session = await syncAppwriteSession();
+
+  if (session) {
+    completePendingCheckoutIfAny();
+  }
+});
 /* يحدّث شكل زر الحساب بالهيدر: يعرض صورة حساب Google إذا كانت متوفرة، وإلا الأيقونة الافتراضية */
 function updateAccountButtonAvatar(session) {
   const btn = document.getElementById("accountBtn");
@@ -673,30 +711,66 @@ async function loadProducts() {
 }
 
 /* يسجّل زيارة جديدة بجدول visits (بدون ما يوقف تحميل الموقع لو صار خطأ) */
+/* تسجيل زيارة في Appwrite */
 async function logVisit() {
   try {
-    const {
-      data: { user }
-    } = await sb.auth.getUser();
+    let user = null;
+
+    // محاولة معرفة المستخدم الحالي
+    try {
+      const userResponse = await fetch(
+        `${APPWRITE_ENDPOINT}/account`,
+        {
+          method: "GET",
+          credentials: "include",
+          headers: {
+            "Accept": "application/json",
+            "X-Appwrite-Project": APPWRITE_PROJECT_ID
+          }
+        }
+      );
+
+      if (userResponse.ok) {
+        user = await userResponse.json();
+      }
+    } catch (e) {
+      // الزائر غير مسجل دخول، وهذا طبيعي
+    }
 
     const visitData = {
-      user_id: user?.id || null,
-      user_email: user?.email || null,
-      visitor_name:
-        user?.user_metadata?.full_name ||
-        user?.user_metadata?.name ||
-        null
+      user_id: user?.$id || null,
+      visitor_name: user?.name || null
     };
 
-    const { error } = await sb
-      .from("visits")
-      .insert(visitData);
+    const response = await fetch(
+      `${APPWRITE_ENDPOINT}/tablesdb/${APPWRITE_DATABASE_ID}/tables/visits/rows`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "X-Appwrite-Project": APPWRITE_PROJECT_ID
+        },
+        body: JSON.stringify({
+          rowId: crypto.randomUUID(),
+          data: visitData
+        })
+      }
+    );
 
-    if (error) {
-      console.error("VISIT ERROR:", error);
+    if (!response.ok) {
+      const errorData =
+        await response.json().catch(() => ({}));
+
+      console.error(
+        "APPWRITE VISIT ERROR:",
+        errorData.message || response.status
+      );
     }
+
   } catch (error) {
-    console.error("VISIT ERROR:", error);
+    // لا نوقف الموقع إذا فشل تسجيل الزيارة
+    console.error("APPWRITE VISIT ERROR:", error);
   }
 }
 
@@ -1079,21 +1153,86 @@ function getCustomerFullName(session) {
 }
 
 async function refreshAccountModalView() {
-  const { data } = await sb.auth.getSession();
-  customerSession = data && data.session ? data.session : null;
-  updateAccountButtonAvatar(customerSession);
+  try {
+    const response = await fetch(
+      `${APPWRITE_ENDPOINT}/account`,
+      {
+        method: "GET",
+        credentials: "include",
+        headers: {
+          "Accept": "application/json",
+          "X-Appwrite-Project": APPWRITE_PROJECT_ID
+        }
+      }
+    );
 
-  if (customerSession) {
+    const userData =
+      await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      window.appwriteCustomerSession = null;
+
+      document.getElementById("authForms").style.display = "block";
+      document.getElementById("accountLoggedIn").style.display = "none";
+
+      return;
+    }
+
+    window.appwriteCustomerSession = {
+      user: userData
+    };
+
     document.getElementById("authForms").style.display = "none";
     document.getElementById("accountLoggedIn").style.display = "block";
 
-    const fullName = getCustomerFullName(customerSession);
-    document.getElementById("accWelcomeText").textContent = "👋 أهلاً " + (fullName || customerSession.user.email || "");
+    const fullName =
+      userData.name ||
+      userData.prefs?.full_name ||
+      userData.email ||
+      "";
 
-    loadMyOrders();
-    // إذا كانت النافذة انفتحت إجبارياً لإتمام طلب، كمّل الإرسال تلقائياً بعد تسجيل الدخول
-    completePendingCheckoutIfAny();
-  } else {
+    const welcomeEl =
+      document.getElementById("accWelcomeText");
+
+    if (welcomeEl) {
+      welcomeEl.textContent =
+        "👋 أهلاً " + fullName;
+    }
+
+    const avatarUrl =
+      userData.prefs?.avatar_url ||
+      "";
+
+    const accountAvatarImg =
+      document.getElementById("accountAvatarImg");
+
+    const accountBtn =
+      document.getElementById("accountBtn");
+
+    if (accountAvatarImg && accountBtn && avatarUrl) {
+      accountAvatarImg.src = avatarUrl;
+      accountBtn.classList.add("has-avatar");
+    } else if (accountAvatarImg && accountBtn) {
+      accountAvatarImg.removeAttribute("src");
+      accountBtn.classList.remove("has-avatar");
+    }
+
+    const ordersList =
+      document.getElementById("accOrdersList");
+
+    if (ordersList) {
+      ordersList.innerHTML =
+        `<div class="acc-empty">سيتم نقل الطلبات إلى Appwrite لاحقًا</div>`;
+    }
+
+  } catch (error) {
+    console.error(
+      "APPWRITE ACCOUNT ERROR:",
+      error
+    );
+
+    window.appwriteCustomerSession = null;
+
     document.getElementById("authForms").style.display = "block";
     document.getElementById("accountLoggedIn").style.display = "none";
   }
@@ -1485,16 +1624,74 @@ async function handleForgotPassword() {
     return;
   }
 
-  const { error } = await sb.auth.resetPasswordForEmail(email, {
-    redirectTo: window.location.href.split("#")[0].split("?")[0]
-  });
+  async function handleForgotPassword() {
+  const errEl =
+    document.getElementById("accountError");
 
-  if (error) {
-    errEl.textContent = "صار خطأ، جرّب مرة ثانية";
+  const email =
+    document
+      .getElementById("custLoginEmail")
+      .value
+      .trim();
+
+  errEl.style.color = "";
+  errEl.textContent = "";
+
+  if (!email) {
+    errEl.textContent =
+      "اكتب إيميلك بالأول حتى نرسلّك رابط تغيير كلمة السر";
     return;
   }
-  errEl.style.color = "#1FAE7A";
-  errEl.textContent = "تم إرسال رابط تغيير كلمة السر لإيميلك ✅";
+
+  try {
+    const recoveryUrl =
+      window.location.origin +
+      window.location.pathname;
+
+    const response = await fetch(
+      `${APPWRITE_ENDPOINT}/account/recovery`,
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "X-Appwrite-Project":
+            APPWRITE_PROJECT_ID
+        },
+
+        body: JSON.stringify({
+          email: email,
+          url: recoveryUrl
+        })
+      }
+    );
+
+    const result =
+      await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(
+        result.message ||
+        "تعذر إرسال رابط تغيير كلمة السر"
+      );
+    }
+
+    errEl.style.color = "#1FAE7A";
+    errEl.textContent =
+      "تم إرسال رابط تغيير كلمة السر لإيميلك ✅";
+
+  } catch (error) {
+
+    console.error(
+      "APPWRITE PASSWORD RECOVERY ERROR:",
+      error
+    );
+
+    errEl.style.color = "";
+    errEl.textContent =
+      "❌ تعذر إرسال رابط تغيير كلمة السر، جرّب مرة ثانية";
+  }
 }
 
 async function handleCustomerLogout() {
@@ -1583,18 +1780,139 @@ async function completePendingCheckoutIfAny() {
 
 async function loadMyOrders() {
   const listEl = document.getElementById("accOrdersList");
-  listEl.innerHTML = `<div class="acc-empty">جاري التحميل...</div>`;
 
-  const { data, error } = await sb
-    .from("orders")
-    .select("*")
-    .order("created_at", { ascending: false });
+  if (!listEl) return;
 
-  if (error || !data || !data.length) {
-    listEl.innerHTML = `<div class="acc-empty">ما عندك طلبات سابقة بعد</div>`;
-    return;
+  listEl.innerHTML =
+    `<div class="acc-empty">جاري التحميل...</div>`;
+
+  try {
+    /* الحصول على المستخدم الحالي من Appwrite */
+    const userResponse = await fetch(
+      `${APPWRITE_ENDPOINT}/account`,
+      {
+        method: "GET",
+        credentials: "include",
+        headers: {
+          "Accept": "application/json",
+          "X-Appwrite-Project": APPWRITE_PROJECT_ID
+        }
+      }
+    );
+
+    if (!userResponse.ok) {
+      listEl.innerHTML =
+        `<div class="acc-empty">سجّل دخولك أولاً</div>`;
+      return;
+    }
+
+    const user = await userResponse.json();
+
+    /* جلب الطلبات من Appwrite */
+    const ordersResponse = await fetch(
+      `${APPWRITE_ENDPOINT}/tablesdb/` +
+      `${APPWRITE_DATABASE_ID}/tables/orders/rows` +
+      `?limit=100`,
+      {
+        method: "GET",
+        credentials: "include",
+        headers: {
+          "Accept": "application/json",
+          "X-Appwrite-Project": APPWRITE_PROJECT_ID
+        }
+      }
+    );
+
+    const ordersData =
+      await ordersResponse.json().catch(() => ({}));
+
+    if (!ordersResponse.ok) {
+      throw new Error(
+        ordersData.message ||
+        "تعذر تحميل الطلبات"
+      );
+    }
+
+    const rows = ordersData.rows || [];
+
+    /* نعرض فقط طلبات المستخدم الحالي */
+    const myOrders = rows
+      .filter(o =>
+        o.data &&
+        String(o.data.customer_id || "") ===
+        String(user.$id || "")
+      )
+      .sort((a, b) =>
+        new Date(b.$createdAt) -
+        new Date(a.$createdAt)
+      );
+
+    if (!myOrders.length) {
+      listEl.innerHTML =
+        `<div class="acc-empty">ما عندك طلبات سابقة بعد</div>`;
+      return;
+    }
+
+    listEl.innerHTML = myOrders.map(o => {
+      const data = o.data || {};
+
+      const date = new Date(
+        o.$createdAt
+      ).toLocaleDateString("ar-EG", {
+        year: "numeric",
+        month: "short",
+        day: "numeric"
+      });
+
+      let items = data.items || [];
+
+      /* في حال كانت items محفوظة كنص JSON */
+      if (typeof items === "string") {
+        try {
+          items = JSON.parse(items);
+        } catch (e) {
+          items = [];
+        }
+      }
+
+      const itemsText = Array.isArray(items)
+        ? items.map(it => {
+            if (typeof it === "string") {
+              return it;
+            }
+
+            return `${it.name || ""} × ${it.qty || 1}`;
+          }).join("، ")
+        : "";
+
+      return `
+        <div class="acc-order-card">
+          <div class="acc-order-head">
+            <span>طلب #${o.$id}</span>
+            <span>${data.total || 0}${CURRENCY}</span>
+          </div>
+
+          <div class="acc-order-date">
+            ${date}
+          </div>
+
+          <div class="acc-order-items">
+            ${itemsText}
+          </div>
+        </div>
+      `;
+    }).join("");
+
+  } catch (error) {
+    console.error(
+      "APPWRITE LOAD ORDERS ERROR:",
+      error
+    );
+
+    listEl.innerHTML =
+      `<div class="acc-empty">تعذر تحميل الطلبات</div>`;
   }
-
+}
   listEl.innerHTML = data.map(o => {
     const date = new Date(o.created_at).toLocaleDateString("ar-EG", { year: "numeric", month: "short", day: "numeric" });
     const itemsText = (o.items || []).map(it => `${it.name} × ${it.qty}`).join("، ");
@@ -1741,7 +2059,7 @@ function closeServiceModal() {
 }
 
 /* ============ إرسال الطلب عبر واتساب + حفظه كسجل فاتورة بقاعدة البيانات ============ */
-async function saveOrderRecord(items, total, customerName, customerEmail) {
+async function saveOrderRecord(items, total, customerName) {
   try {
     const orderItems = items.map(it => ({
       id: it.id,
@@ -1750,29 +2068,86 @@ async function saveOrderRecord(items, total, customerName, customerEmail) {
       price: it.price
     }));
 
-const { error } = await sb.from("orders").insert({
-  customer_id: customerSession ? customerSession.user.id : null,
-  customer_name: customerName || (
-    customerSession
-      ? (customerSession.user.user_metadata?.full_name || null)
-      : null
-  ),
-  customer_email: customerEmail || (
-    customerSession
-      ? customerSession.user.email
-      : null
-  ),
-  country: selectedCountry,
-  items: orderItems,
-  total: total
-});
-    if (error) {
-      console.error("خطأ حفظ اسم الزبون:", error);
-    }
+try {
+  let user = null;
 
+  /* جلب المستخدم الحالي من Appwrite */
+  try {
+    const userResponse = await fetch(
+      `${APPWRITE_ENDPOINT}/account`,
+      {
+        method: "GET",
+        credentials: "include",
+        headers: {
+          "Accept": "application/json",
+          "X-Appwrite-Project": APPWRITE_PROJECT_ID
+        }
+      }
+    );
+
+    if (userResponse.ok) {
+      user = await userResponse.json();
+    }
   } catch (e) {
-    console.warn("تعذّر حفظ سجل الطلب:", e);
+    console.warn("تعذر جلب مستخدم Appwrite:", e);
   }
+
+  const customerId = user?.$id || null;
+
+  const finalCustomerName =
+    customerName ||
+    user?.name ||
+    null;
+
+  /* items عندك Text + Array
+     لذلك نحول كل منتج إلى JSON string */
+  const finalItems = Array.isArray(orderItems)
+    ? orderItems.map(item => JSON.stringify(item))
+    : [];
+
+  const response = await fetch(
+    `${APPWRITE_ENDPOINT}/tablesdb/` +
+    `${APPWRITE_DATABASE_ID}/tables/orders/rows`,
+    {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "X-Appwrite-Project": APPWRITE_PROJECT_ID
+      },
+      body: JSON.stringify({
+        rowId: crypto.randomUUID(),
+        data: {
+          customer_id: customerId,
+          customer_name: finalCustomerName,
+          items: finalItems,
+          total: String(total)
+        }
+      })
+    }
+  );
+
+  const result =
+    await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(
+      result.message ||
+      "تعذر حفظ الطلب في Appwrite"
+    );
+  }
+
+  console.log(
+    "تم حفظ الطلب في Appwrite ✅",
+    result
+  );
+
+} catch (e) {
+  console.warn(
+    "تعذر حفظ سجل الطلب في Appwrite:",
+    e
+  );
 }
 
 async function sendWhatsAppOrder() {
@@ -1782,9 +2157,39 @@ async function sendWhatsAppOrder() {
     return;
   }
 
-  // نتأكد من حالة تسجيل الدخول الفعلية من Supabase قبل أي شي
-  const { data: sessData } = await sb.auth.getSession();
-  customerSession = sessData && sessData.session ? sessData.session : null;
+ // نتأكد من حالة تسجيل الدخول الفعلية من Appwrite قبل إرسال الطلب
+
+try {
+  const response = await fetch(
+    `${APPWRITE_ENDPOINT}/account`,
+    {
+      method: "GET",
+      credentials: "include",
+      headers: {
+        "Accept": "application/json",
+        "X-Appwrite-Project": APPWRITE_PROJECT_ID
+      }
+    }
+  );
+
+  if (response.ok) {
+    const user = await response.json();
+
+    customerSession = {
+      user: user
+    };
+  } else {
+    customerSession = null;
+  }
+
+} catch (error) {
+  console.warn(
+    "تعذر التحقق من جلسة Appwrite:",
+    error
+  );
+
+  customerSession = null;
+}
 
   // لازم يكون الزبون مسجل دخول قبل إرسال الفاتورة، حتى يظهر اسمه وإيميله تلقائياً بالفاتورة
   // ونقدر نحفظها بحسابه ليشوفها لاحقاً بـ"طلباتي السابقة"
@@ -1794,8 +2199,6 @@ async function sendWhatsAppOrder() {
     openAccountModal("checkout");
     return;
   }
-
-  const customerEmail = customerSession.user.email || "";
   const customerName = getCustomerFullName(customerSession);
 
   let total = 0;
@@ -1829,7 +2232,7 @@ async function sendWhatsAppOrder() {
   message += "يرجى تأكيد الطلب وإرسال العنوان لإتمام التوصيل 🙏";
 
   // حفظ الفاتورة مع الاسم والإيميل
-  await saveOrderRecord(orderedItems, total, customerName, customerEmail);
+  await saveOrderRecord(orderedItems, total, customerName);
 
   const url =
     `https://wa.me/${WHATSAPP_NUMBERS[selectedCountry]}?text=${encodeURIComponent(message)}`;

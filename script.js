@@ -2059,6 +2059,7 @@ function closeServiceModal() {
 }
 
 /* ============ إرسال الطلب عبر واتساب + حفظه كسجل فاتورة بقاعدة البيانات ============ */
+
 async function saveOrderRecord(items, total, customerName) {
   try {
     const orderItems = items.map(it => ({
@@ -2068,86 +2069,86 @@ async function saveOrderRecord(items, total, customerName) {
       price: it.price
     }));
 
-try {
-  let user = null;
+    let user = null;
 
-  /* جلب المستخدم الحالي من Appwrite */
-  try {
-    const userResponse = await fetch(
-      `${APPWRITE_ENDPOINT}/account`,
+    try {
+      const userResponse = await fetch(
+        `${APPWRITE_ENDPOINT}/account`,
+        {
+          method: "GET",
+          credentials: "include",
+          headers: {
+            "Accept": "application/json",
+            "X-Appwrite-Project": APPWRITE_PROJECT_ID
+          }
+        }
+      );
+
+      if (userResponse.ok) {
+        user = await userResponse.json();
+      }
+    } catch (e) {
+      console.warn(
+        "تعذر جلب مستخدم Appwrite:",
+        e
+      );
+    }
+
+    const customerId = user?.$id || null;
+
+    const finalCustomerName =
+      customerName ||
+      user?.name ||
+      null;
+
+    const finalItems = Array.isArray(orderItems)
+      ? orderItems.map(item => JSON.stringify(item))
+      : [];
+
+    const response = await fetch(
+      `${APPWRITE_ENDPOINT}/tablesdb/` +
+      `${APPWRITE_DATABASE_ID}/tables/orders/rows`,
       {
-        method: "GET",
+        method: "POST",
         credentials: "include",
         headers: {
+          "Content-Type": "application/json",
           "Accept": "application/json",
           "X-Appwrite-Project": APPWRITE_PROJECT_ID
-        }
+        },
+        body: JSON.stringify({
+          rowId: crypto.randomUUID(),
+          data: {
+            customer_id: customerId,
+            customer_name: finalCustomerName,
+            items: finalItems,
+            total: String(total)
+          }
+        })
       }
     );
 
-    if (userResponse.ok) {
-      user = await userResponse.json();
+    const result =
+      await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(
+        result.message ||
+        "تعذر حفظ الطلب في Appwrite"
+      );
     }
+
+    console.log(
+      "تم حفظ الطلب في Appwrite ✅",
+      result
+    );
+
   } catch (e) {
-    console.warn("تعذر جلب مستخدم Appwrite:", e);
-  }
-
-  const customerId = user?.$id || null;
-
-  const finalCustomerName =
-    customerName ||
-    user?.name ||
-    null;
-
-  /* items عندك Text + Array
-     لذلك نحول كل منتج إلى JSON string */
-  const finalItems = Array.isArray(orderItems)
-    ? orderItems.map(item => JSON.stringify(item))
-    : [];
-
-  const response = await fetch(
-    `${APPWRITE_ENDPOINT}/tablesdb/` +
-    `${APPWRITE_DATABASE_ID}/tables/orders/rows`,
-    {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "X-Appwrite-Project": APPWRITE_PROJECT_ID
-      },
-      body: JSON.stringify({
-        rowId: crypto.randomUUID(),
-        data: {
-          customer_id: customerId,
-          customer_name: finalCustomerName,
-          items: finalItems,
-          total: String(total)
-        }
-      })
-    }
-  );
-
-  const result =
-    await response.json().catch(() => ({}));
-
-  if (!response.ok) {
-    throw new Error(
-      result.message ||
-      "تعذر حفظ الطلب في Appwrite"
+    console.warn(
+      "تعذر حفظ سجل الطلب في Appwrite:",
+      e
     );
   }
-
-  console.log(
-    "تم حفظ الطلب في Appwrite ✅",
-    result
-  );
-
-} catch (e) {
-  console.warn(
-    "تعذر حفظ سجل الطلب في Appwrite:",
-    e
-  );
 }
 
 async function sendWhatsAppOrder() {

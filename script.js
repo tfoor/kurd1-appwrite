@@ -259,7 +259,16 @@ const APPWRITE_DATABASE_ID =
 
 const APPWRITE_TABLE_ID =
   "Products";
+/* ============ Appwrite Web SDK ============ */
 
+const client = new Appwrite.Client();
+
+client
+  .setEndpoint(APPWRITE_ENDPOINT)
+  .setProject(APPWRITE_PROJECT_ID);
+
+const account = new Appwrite.Account(client);
+const tablesDB = new Appwrite.TablesDB(client);
 /* مفتاح يحفظ إشارة إنه في طلب فاتورة معلّق بانتظار تسجيل الدخول (يستخدم خصوصاً
    مع تسجيل الدخول عبر Google، لأنه بيعمل تحويل كامل للصفحة ورجوع منها) */
 const PENDING_CHECKOUT_KEY = "boutique_pending_checkout";
@@ -593,102 +602,76 @@ let products = [];
 
 async function loadProducts() {
   try {
-    const rows = [];
-    const limit = 100;
-    let offset = 0;
+    const result = await tablesDB.listRows({
+      databaseId: APPWRITE_DATABASE_ID,
+      tableId: APPWRITE_TABLE_ID
+    });
 
-    while (true) {
-      const url =
-        `${APPWRITE_ENDPOINT}/tablesdb/` +
-        `${APPWRITE_DATABASE_ID}/tables/` +
-        `${APPWRITE_TABLE_ID}/rows` +
-        `?limit=${limit}&offset=${offset}&total=false`;
-
-      const response = await fetch(url, {
-        method: "GET",
-        headers: {
-          "Accept": "application/json",
-          "X-Appwrite-Project": APPWRITE_PROJECT_ID
-        }
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(
-          `Appwrite HTTP ${response.status}: ${errorText}`
-        );
-      }
-
-      const result = await response.json();
-
-      const batch = Array.isArray(result.rows)
-        ? result.rows
-        : [];
-
-      rows.push(...batch);
-
-      if (batch.length < limit) break;
-
-      offset += limit;
-    }
+    const rows = Array.isArray(result.rows)
+      ? result.rows
+      : [];
 
     if (!rows.length) {
       throw new Error("Appwrite لم يرجع أي منتجات");
     }
 
-    allProducts = rows.map(row => ({
-      id:
-        row.product_id !== undefined &&
-        row.product_id !== null
-          ? Number(row.product_id)
-          : Number(row.id),
+    allProducts = rows.map(row => {
+      const data = row.data || {};
 
-      name: row.name || "",
+      return {
+        id:
+          data.product_id !== undefined &&
+          data.product_id !== null
+            ? Number(data.product_id)
+            : Number(data.id || row.$id),
 
-      cat:
-        row.category ||
-        row.cat ||
-        "",
+        name: data.name || "",
 
-      sub:
-        row.subcategory ||
-        row.sub ||
-        "",
+        cat:
+          data.category ||
+          data.cat ||
+          "",
 
-      price:
-        Number(row.price || 0),
+        sub:
+          data.subcategory ||
+          data.sub ||
+          "",
 
-      oldPrice:
-        row.old_price !== undefined &&
-        row.old_price !== null
-          ? Number(row.old_price)
-          : undefined,
+        price:
+          Number(data.price || 0),
 
-      color:
-        row.color ||
-        undefined,
+        oldPrice:
+          data.old_price !== undefined &&
+          data.old_price !== null
+            ? Number(data.old_price)
+            : undefined,
 
-      img:
-        row.image ||
-        row.img ||
-        "",
+        color:
+          data.color ||
+          undefined,
 
-      badge:
-        row.badge === "جديد" &&
-        row.new_until &&
-        new Date(row.new_until) > new Date()
-          ? "جديد"
-          : row.badge === "جديد"
-            ? undefined
-            : (row.badge || undefined),
+        img:
+          data.image ||
+          data.img ||
+          "",
 
-      newUntil:
-        row.new_until ||
-        null,
+        badge:
+          data.badge === "جديد" &&
+          data.new_until &&
+          new Date(data.new_until) > new Date()
+            ? "جديد"
+            : data.badge === "جديد"
+              ? undefined
+              : (data.badge || undefined),
 
-      sale:
-        !!row.sale
-    }));
+        newUntil:
+          data.new_until ||
+          null,
+
+        sale:
+          !!data.sale
+      };
+    });
 
     console.log(
       `✅ Appwrite: تم تحميل ${allProducts.length} منتج`
@@ -710,70 +693,29 @@ async function loadProducts() {
   );
 }
 
-/* يسجّل زيارة جديدة بجدول visits (بدون ما يوقف تحميل الموقع لو صار خطأ) */
-/* تسجيل زيارة في Appwrite */
+/* ============ تسجيل زيارة في Appwrite ============ */
+
 async function logVisit() {
   try {
-    let user = null;
-
-    // محاولة معرفة المستخدم الحالي
-    try {
-      const userResponse = await fetch(
-        `${APPWRITE_ENDPOINT}/account`,
-        {
-          method: "GET",
-          credentials: "include",
-          headers: {
-            "Accept": "application/json",
-            "X-Appwrite-Project": APPWRITE_PROJECT_ID
-          }
-        }
-      );
-
-      if (userResponse.ok) {
-        user = await userResponse.json();
+    await tablesDB.createRow({
+      databaseId: APPWRITE_DATABASE_ID,
+      tableId: "visits",
+      rowId: crypto.randomUUID(),
+      data: {
+        user_id: null,
+        visitor_name: null
       }
-    } catch (e) {
-      // الزائر غير مسجل دخول، وهذا طبيعي
-    }
+    });
 
-    const visitData = {
-      user_id: user?.$id || null,
-      visitor_name: user?.name || null
-    };
-
-    const response = await fetch(
-      `${APPWRITE_ENDPOINT}/tablesdb/${APPWRITE_DATABASE_ID}/tables/visits/rows`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Accept": "application/json",
-          "X-Appwrite-Project": APPWRITE_PROJECT_ID
-        },
-        body: JSON.stringify({
-          rowId: crypto.randomUUID(),
-          data: visitData
-        })
-      }
-    );
-
-    if (!response.ok) {
-      const errorData =
-        await response.json().catch(() => ({}));
-
-      console.error(
-        "APPWRITE VISIT ERROR:",
-        errorData.message || response.status
-      );
-    }
+    console.log("تم تسجيل الزيارة ✅");
 
   } catch (error) {
-    // لا نوقف الموقع إذا فشل تسجيل الزيارة
-    console.error("APPWRITE VISIT ERROR:", error);
+    console.error(
+      "APPWRITE VISIT ERROR:",
+      error
+    );
   }
 }
-
 const categories = ["الكل", "رجالي", "نسائي", "أطفال", "أحذية", "إكسسوارات", "مكياج", "أدوات منزلية"];
 const catKeyMap = { "الكل": "cat_all", "رجالي": "cat_men", "نسائي": "cat_women", "أطفال": "cat_kids", "أحذية": "cat_shoes", "إكسسوارات": "cat_acc", "مكياج": "cat_makeup", "أدوات منزلية": "cat_home" };
 

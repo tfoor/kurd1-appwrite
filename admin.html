@@ -1370,35 +1370,74 @@
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-
+  <script src="https://cdn.jsdelivr.net/npm/appwrite@26.2.0"></script>
   <script>
-    const SUPABASE_URL =
-      "https://gzhgokztibcctmmljorf.supabase.co";
+    // Appwrite: كل شي (منتجات + صور + تسجيل دخول الأدمن + طلبات + زيارات)
+    const APPWRITE_ENDPOINT = "https://fra.cloud.appwrite.io/v1";
+    const APPWRITE_PROJECT_ID = "6a9321f3002b6c1004a9";
+    const APPWRITE_DATABASE_ID = "6a93224c002e35f858b8";
+    const APPWRITE_TABLE_ID = "Products";
+    const APPWRITE_BUCKET_ID = "6a933a1d001e12834551";
+    // ⚠️ عدّلي هاي الـ IDs الثلاثة إذا كانت مختلفة عندك بلوحة Appwrite (Databases → اسم الجدول الفعلي)
+    const APPWRITE_ORDERS_TABLE_ID = "orders";
+    const APPWRITE_VISITS_TABLE_ID = "visits";
 
-    const SUPABASE_ANON_KEY =
-      "sb_publishable_7bfT9JW5Y7aMRR211n0GVA_Blfp1UDx";
+    const awClient = new Appwrite.Client()
+      .setEndpoint(APPWRITE_ENDPOINT)
+      .setProject(APPWRITE_PROJECT_ID);
+    const awTablesDB = new Appwrite.TablesDB(awClient);
+    const awStorage = new Appwrite.Storage(awClient);
+    const awAccount = new Appwrite.Account(awClient);
+    const AppwriteQuery = Appwrite.Query;
+    const AppwritePermission = Appwrite.Permission;
+    const AppwriteRole = Appwrite.Role;
 
-    const sb = supabase.createClient(
-      SUPABASE_URL,
-      SUPABASE_ANON_KEY
-    );
+    /* يبني رابط عرض الصورة من Appwrite Storage لملف معيّن */
+    function appwriteFileViewUrl(fileId) {
+      return `${APPWRITE_ENDPOINT}/storage/buckets/${APPWRITE_BUCKET_ID}/files/${fileId}/view?project=${encodeURIComponent(APPWRITE_PROJECT_ID)}`;
+    }
 
-    /* ============ Appwrite ============ */
+    /* يحوّل صف من جدول Products بـ Appwrite لشكل المنتج المستخدم بهاي الصفحة */
+    function productFromAppwriteRow(row) {
+      return {
+        id: row.product_id,
+        name: row.name,
+        price: Number(row.price),
+        old_price: row.old_price !== null && row.old_price !== undefined ? Number(row.old_price) : null,
+        cat: row.category,
+        sub: row.subcategory,
+        color: row.color || "",
+        badge: row.badge || "",
+        img: row.image,
+        new_until: row.new_until || null,
+        sale: !!row.sale,
+        _rowId: row.$id,
+      };
+    }
 
-    const APPWRITE_ENDPOINT =
-      "https://fra.cloud.appwrite.io/v1";
-
-    const APPWRITE_PROJECT_ID =
-      "6a9321f3002b6c1004a9";
-
-    const APPWRITE_DATABASE_ID =
-      "6a93224c002e35f858b8";
-
-    const APPWRITE_TABLE_ID =
-      "Products";
-    const APPWRITE_BUCKET_ID =
-      "6a933a1d001e12834551";
+    /* يجيب كل صفوف المنتجات من Appwrite (بصفحات) */
+    async function fetchAllAppwriteProducts() {
+      const step = 500;
+      let offset = 0;
+      const rows = [];
+      while (true) {
+        const res = await awTablesDB.listRows({
+          databaseId: APPWRITE_DATABASE_ID,
+          tableId: APPWRITE_TABLE_ID,
+          queries: [
+            AppwriteQuery.orderAsc("product_id"),
+            AppwriteQuery.limit(step),
+            AppwriteQuery.offset(offset),
+          ],
+        });
+        const batch = res.rows || res.documents || [];
+        if (!batch.length) break;
+        rows.push(...batch);
+        if (batch.length < step) break;
+        offset += step;
+      }
+      return rows;
+    }
 
     let allProducts = [];
     let activeCat = "الكل";
@@ -1439,7 +1478,12 @@
       btn.disabled = true;
       btn.textContent = "جاري الدخول...";
 
-      const { error } = await sb.auth.signInWithPassword({ email, password });
+      let error = null;
+      try {
+        await awAccount.createEmailPasswordSession({ email, password });
+      } catch (e) {
+        error = e;
+      }
 
       btn.disabled = false;
       btn.textContent = "تسجيل الدخول";
@@ -1454,7 +1498,7 @@
     }
 
     async function handleLogout() {
-      await sb.auth.signOut();
+      try { await awAccount.deleteSession({ sessionId: "current" }); } catch (e) {}
       document.getElementById("dashboard").style.display = "none";
       document.getElementById("loginScreen").style.display = "flex";
       document.getElementById("loginPassword").value = "";
@@ -1482,125 +1526,19 @@
       if (!isProducts) loadOrders();
     }
 
-    /* ============ جلب المنتجات من Appwrite ============ */
+    /* ============ جلب المنتجات ============ */
     async function loadProducts() {
       try {
-        const rows = [];
-        const limit = 100;
-        let offset = 0;
-
-        while (true) {
-          const url =
-            `${APPWRITE_ENDPOINT}/tablesdb/` +
-            `${APPWRITE_DATABASE_ID}/tables/` +
-            `${APPWRITE_TABLE_ID}/rows` +
-            `?limit=${limit}&offset=${offset}&total=false`;
-
-          const response = await fetch(url, {
-            method: "GET",
-            headers: {
-              Accept: "application/json",
-              "X-Appwrite-Project": APPWRITE_PROJECT_ID
-            }
-          });
-
-          if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(
-              `Appwrite HTTP ${response.status}: ${errorText}`
-            );
-          }
-
-          const result = await response.json();
-
-          const batch = Array.isArray(result.rows)
-            ? result.rows
-            : [];
-
-          rows.push(...batch);
-
-          if (batch.length < limit) {
-            break;
-          }
-
-          offset += limit;
-        }
-
-        allProducts = rows.map(row => ({
-          id:
-            row.product_id !== undefined &&
-              row.product_id !== null
-              ? Number(row.product_id)
-              : Number(row.id),
-
-          name: row.name || "",
-
-          cat:
-            row.category ||
-            row.cat ||
-            "",
-
-          sub:
-            row.subcategory ||
-            row.sub ||
-            "",
-
-          price:
-            Number(row.price || 0),
-
-          old_price:
-            row.old_price !== undefined &&
-              row.old_price !== null
-              ? Number(row.old_price)
-              : null,
-
-          color:
-            row.color ||
-            null,
-
-          img:
-            row.image ||
-            row.img ||
-            "",
-
-          badge:
-            row.badge ||
-            null,
-
-          new_until:
-            row.new_until ||
-            null,
-
-          sale:
-            !!row.sale
-        }));
-
-        document.getElementById("productsCount").textContent =
-          allProducts.length;
-
-        document.getElementById("navProductsCount").textContent =
-          allProducts.length;
-
-        console.log(
-          `✅ Appwrite: تم تحميل ${allProducts.length} منتج`
-        );
-
-        buildCatTabs();
-        renderProductList();
-
+        const rows = await fetchAllAppwriteProducts();
+        allProducts = rows.map(productFromAppwriteRow);
       } catch (error) {
-
-        console.error(
-          "APPWRITE PRODUCTS ERROR:",
-          error
-        );
-
-        document.getElementById("productList").innerHTML =
-          `<div class="empty-state">
-        ❌ فشل جلب المنتجات من Appwrite:
-        ${error.message}
-      </div>`;
+        document.getElementById("productList").innerHTML = `<div class="empty-state">صار خطأ بجلب المنتجات: ${error.message || error}</div>`;
+        return;
       }
+      document.getElementById("productsCount").textContent = allProducts.length;
+      document.getElementById("navProductsCount").textContent = allProducts.length;
+      buildCatTabs();
+      renderProductList();
     }
 
     /* ============ بناء تبويبات الفئات (تلقائياً من المنتجات الموجودة) ============ */
@@ -1619,8 +1557,18 @@
 
     /* ============ جلب عدد الزيارات ============ */
     async function loadVisitsCount() {
-      const { count, error } = await sb.from("visits").select("*", { count: "exact", head: true });
-      document.getElementById("visitsCount").textContent = error ? "—" : (count ?? 0);
+      let count = 0;
+      try {
+        const res = await awTablesDB.listRows({
+          databaseId: APPWRITE_DATABASE_ID,
+          tableId: APPWRITE_VISITS_TABLE_ID,
+          queries: [AppwriteQuery.limit(1)],
+        });
+        count = res.total ?? 0;
+      } catch (e) {
+        count = null;
+      }
+      document.getElementById("visitsCount").textContent = count === null ? "—" : count;
     }
     async function loadVisitors() {
       const listEl = document.getElementById("visitorsList");
@@ -1630,17 +1578,19 @@
       listEl.innerHTML =
         `<div class="loading-state">جاري تحميل الزوار...</div>`;
 
-      const { data, error } = await sb
-        .from("visits")
-        .select("id, created_at, visitor_name, user_email, user_id")
-        .order("created_at", { ascending: false })
-        .limit(50);
-
-      if (error) {
+      let data = [];
+      try {
+        const res = await awTablesDB.listRows({
+          databaseId: APPWRITE_DATABASE_ID,
+          tableId: APPWRITE_VISITS_TABLE_ID,
+          queries: [AppwriteQuery.orderDesc("$createdAt"), AppwriteQuery.limit(50)],
+        });
+        data = res.rows || res.documents || [];
+      } catch (error) {
         console.error("VISITORS ERROR:", error);
 
         listEl.innerHTML =
-          `<div class="empty-state">❌ فشل تحميل الزوار: ${error.message}</div>`;
+          `<div class="empty-state">❌ فشل تحميل الزوار: ${error.message || error}</div>`;
 
         return;
       }
@@ -1656,13 +1606,13 @@
         const name =
           v.visitor_name ||
           v.user_email ||
-          `زائر #${v.id}`;
+          `زائر #${v.$id}`;
 
         const status = v.user_id
           ? "🟢 مسجل دخول"
           : "👤 زائر";
 
-        const date = new Date(v.created_at).toLocaleString(
+        const date = new Date(v.$createdAt).toLocaleString(
           "ar-IQ",
           {
             year: "numeric",
@@ -1711,8 +1661,17 @@
 
     /* ============ جلب عدد الطلبات ============ */
     async function loadOrdersCount() {
-      const { count, error } = await sb.from("orders").select("*", { count: "exact", head: true });
-      const val = error ? "—" : (count ?? 0);
+      let val = "—";
+      try {
+        const res = await awTablesDB.listRows({
+          databaseId: APPWRITE_DATABASE_ID,
+          tableId: APPWRITE_ORDERS_TABLE_ID,
+          queries: [AppwriteQuery.limit(1)],
+        });
+        val = res.total ?? 0;
+      } catch (e) {
+        val = "—";
+      }
       document.getElementById("ordersCount").textContent = val;
       document.getElementById("navOrdersCount").textContent = val;
     }
@@ -1768,7 +1727,17 @@
       btn.disabled = true;
       btn.textContent = "...";
 
-      const { error } = await sb.from("products").update({ name: newName, price: newPrice }).eq("id", id);
+      let error = null;
+      try {
+        await awTablesDB.updateRow({
+          databaseId: APPWRITE_DATABASE_ID,
+          tableId: APPWRITE_TABLE_ID,
+          rowId: String(id),
+          data: { name: newName, price: newPrice },
+        });
+      } catch (e) {
+        error = e;
+      }
 
       btn.disabled = false;
 
@@ -1800,36 +1769,29 @@
       const confirmed = confirm(`⚠️ هل أنت متأكد من حذف المنتج؟\n\n#${product.id} — ${product.name}`);
       if (!confirmed) return;
 
-      const { error: dbError } = await sb.from("products").delete().eq("id", id);
-
-      if (dbError) {
+      try {
+        await awTablesDB.deleteRow({
+          databaseId: APPWRITE_DATABASE_ID,
+          tableId: APPWRITE_TABLE_ID,
+          rowId: String(id),
+        });
+      } catch (dbError) {
         console.error("DB DELETE ERROR:", dbError);
-        showToast("❌ فشل حذف المنتج: " + dbError.message);
+        showToast("❌ فشل حذف المنتج: " + (dbError.message || dbError));
         return;
       }
 
       if (product.img) {
         try {
-          const url = new URL(product.img);
-          const marker = "/object/public/product-images/";
-          const index = url.pathname.indexOf(marker);
-
-          if (index !== -1) {
-            const filePath = decodeURIComponent(url.pathname.substring(index + marker.length));
-            const { error: storageError } = await sb.storage.from("product-images").remove([filePath]);
-
-            if (storageError) {
-              console.error("STORAGE DELETE ERROR:", storageError);
-              showToast("⚠️ المنتج انحذف لكن الصورة بقيت");
-              return;
-            }
-          } else {
-            console.warn("⚠️ لم أستطع استخراج مسار الصورة:", product.img);
+          const fileId = `product-${id}`;
+          await awStorage.deleteFile({ bucketId: APPWRITE_BUCKET_ID, fileId });
+        } catch (storageError) {
+          // كود 404 يعني الملف مو موجود أصلاً (مثلاً منتج بلا صورة حقيقية) - نتجاهله
+          if (Number(storageError?.code) !== 404) {
+            console.error("STORAGE DELETE ERROR:", storageError);
+            showToast("⚠️ المنتج انحذف لكن الصورة بقيت");
+            return;
           }
-        } catch (e) {
-          console.error("STORAGE ERROR:", e);
-          showToast("⚠️ المنتج انحذف لكن الصورة بقيت");
-          return;
         }
       }
 
@@ -1937,375 +1899,149 @@
     }
 
     async function addProduct() {
-  const btn = document.getElementById("addProductBtn");
+      const btn = document.getElementById("addProductBtn");
 
-  const id = parseInt(
-    document.getElementById("newId").value,
-    10
-  );
+      const id = parseInt(document.getElementById("newId").value, 10);
+      const name = document.getElementById("newName").value.trim();
+      const cat = document.getElementById("newCat").value.trim() || null;
+      const sub = document.getElementById("newSub").value.trim() || null;
+      const price = parseFloat(document.getElementById("newPrice").value);
 
-  const name = document
-    .getElementById("newName")
-    .value
-    .trim();
+      const oldPriceRaw = document.getElementById("newOldPrice").value;
+      const old_price = oldPriceRaw === "" ? null : parseFloat(oldPriceRaw);
 
-  const cat =
-    document.getElementById("newCat").value.trim() || null;
+      const color = document.getElementById("newColor").value.trim() || null;
+      const badge = document.getElementById("newBadge").value.trim() || null;
+      const newUntil = badge === "جديد" ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() : null;
 
-  const sub =
-    document.getElementById("newSub").value.trim() || null;
+      let imageFile = document.getElementById("newImgFile").files[0];
 
-  const price = parseFloat(
-    document.getElementById("newPrice").value
-  );
-
-  const oldPriceRaw =
-    document.getElementById("newOldPrice").value;
-
-  const old_price =
-    oldPriceRaw === ""
-      ? null
-      : parseFloat(oldPriceRaw);
-
-  const color =
-    document.getElementById("newColor").value.trim() || null;
-
-  const badge =
-    document.getElementById("newBadge").value.trim() || null;
-
-  const newUntil =
-    badge === "جديد"
-      ? new Date(
-          Date.now() + 7 * 24 * 60 * 60 * 1000
-        ).toISOString()
-      : null;
-
-  let imageFile =
-    document.getElementById("newImgFile").files[0];
-
-  /* ================= التحقق ================= */
-
-  if (
-    !Number.isInteger(id) ||
-    id <= 0 ||
-    !name ||
-    Number.isNaN(price) ||
-    price < 0
-  ) {
-    showToast(
-      "⚠️ عبّي رقم المنتج والاسم والسعر بشكل صحيح"
-    );
-    return;
-  }
-
-  if (
-    old_price !== null &&
-    (Number.isNaN(old_price) || old_price < 0)
-  ) {
-    showToast("⚠️ السعر القديم غير صحيح");
-    return;
-  }
-
-  if (
-    allProducts.some(
-      p => Number(p.id) === id
-    )
-  ) {
-    showToast(
-      "⚠️ رقم المنتج موجود مسبقًا"
-    );
-    return;
-  }
-
-  if (!imageFile) {
-    showToast("⚠️ اختر صورة للمنتج");
-    return;
-  }
-
-  if (!imageFile.type.startsWith("image/")) {
-    showToast(
-      "⚠️ الملف المختار ليس صورة"
-    );
-    return;
-  }
-
-  btn.disabled = true;
-  btn.textContent = "جاري ضغط الصورة...";
-
-  let uploadedFileId = null;
-
-  try {
-    /* ================= ضغط الصورة ================= */
-
-    const originalSize = imageFile.size;
-
-    imageFile =
-      await compressImageToWebP(imageFile);
-
-    const savedPercent =
-      originalSize
-        ? Math.max(
-            0,
-            (1 -
-              imageFile.size /
-                originalSize) *
-              100
-          )
-        : 0;
-
-    const processInfo =
-      document.getElementById(
-        "imageProcessInfo"
-      );
-
-    if (processBox && processInfo) {
-      processBox.style.display = "block";
-
-      processInfo.innerHTML = `
-        ✅ الحجم الأصلي:
-        ${formatFileSize(originalSize)}<br>
-
-        📉 بعد الضغط:
-        ${formatFileSize(imageFile.size)}<br>
-
-        💾 التوفير:
-        ${savedPercent.toFixed(1)}%<br>
-
-        🔄 جاري رفع WebP إلى Appwrite...
-      `;
-    }
-
-    /* ================= رفع الصورة إلى Appwrite ================= */
-
-    btn.textContent =
-      "جاري رفع الصورة إلى Appwrite...";
-
-    uploadedFileId =
-      `product-${id}-${Date.now()}`;
-
-    const formData = new FormData();
-
-    formData.append(
-      "fileId",
-      uploadedFileId
-    );
-
-    formData.append(
-      "file",
-      imageFile,
-      `${id}.webp`
-    );
-
-    const uploadResponse =
-      await fetch(
-        `${APPWRITE_ENDPOINT}/storage/buckets/` +
-        `${APPWRITE_BUCKET_ID}/files`,
-        {
-          method: "POST",
-
-          headers: {
-            "X-Appwrite-Project":
-              APPWRITE_PROJECT_ID
-          },
-
-          body: formData
-        }
-      );
-
-    if (!uploadResponse.ok) {
-      const errorText =
-        await uploadResponse.text();
-
-      throw new Error(
-        `فشل رفع الصورة HTTP ${uploadResponse.status}: ${errorText}`
-      );
-    }
-
-    const uploadedFile =
-      await uploadResponse.json();
-
-    console.log(
-      "✅ Appwrite file:",
-      uploadedFile
-    );
-
-    /* ================= رابط الصورة ================= */
-
-    const imageUrl =
-      `${APPWRITE_ENDPOINT}` +
-      `/storage/buckets/` +
-      `${APPWRITE_BUCKET_ID}` +
-      `/files/` +
-      `${uploadedFileId}` +
-      `/view?project=` +
-      `${encodeURIComponent(
-        APPWRITE_PROJECT_ID
-      )}`;
-
-    /* ================= إضافة المنتج ================= */
-
-    btn.textContent =
-      "جاري إضافة المنتج إلى Appwrite...";
-
-    const rowData = {
-      product_id: id,
-      name: name,
-      price: price,
-      old_price: old_price,
-      category: cat,
-      subcategory: sub,
-      color: color,
-      badge: badge,
-      image: imageUrl,
-      new_until: newUntil,
-      sale:
-        old_price !== null &&
-        old_price > price
-    };
-
-    const rowResponse =
-      await fetch(
-        `${APPWRITE_ENDPOINT}/tablesdb/` +
-        `${APPWRITE_DATABASE_ID}/tables/` +
-        `${APPWRITE_TABLE_ID}/rows`,
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type":
-              "application/json",
-
-            "Accept":
-              "application/json",
-
-            "X-Appwrite-Project":
-              APPWRITE_PROJECT_ID
-          },
-
-          body: JSON.stringify({
-            rowId: String(id),
-            data: rowData
-          })
-        }
-      );
-
-    if (!rowResponse.ok) {
-      const errorText =
-        await rowResponse.text();
-
-      /* محاولة حذف الصورة إذا فشل إنشاء المنتج */
-
-      try {
-        await fetch(
-          `${APPWRITE_ENDPOINT}` +
-          `/storage/buckets/` +
-          `${APPWRITE_BUCKET_ID}` +
-          `/files/` +
-          `${uploadedFileId}`,
-          {
-            method: "DELETE",
-
-            headers: {
-              "X-Appwrite-Project":
-                APPWRITE_PROJECT_ID
-            }
-          }
-        );
-      } catch (cleanupError) {
-        console.warn(
-          "تعذر حذف الصورة بعد فشل المنتج:",
-          cleanupError
-        );
+      if (!Number.isInteger(id) || id <= 0 || !name || Number.isNaN(price) || price < 0) {
+        showToast("⚠️ عبّي رقم المنتج والاسم والسعر بشكل صحيح");
+        return;
       }
 
-      throw new Error(
-        `فشلت إضافة المنتج HTTP ${rowResponse.status}: ${errorText}`
-      );
+      if (old_price !== null && (Number.isNaN(old_price) || old_price < 0)) {
+        showToast("⚠️ السعر القديم غير صحيح");
+        return;
+      }
+
+      if (allProducts.some(p => Number(p.id) === id)) {
+        showToast("⚠️ رقم المنتج موجود مسبقًا");
+        return;
+      }
+
+      if (!imageFile) {
+        showToast("⚠️ اختر صورة للمنتج");
+        return;
+      }
+
+      if (!imageFile.type.startsWith("image/")) {
+        showToast("⚠️ الملف المختار ليس صورة");
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = "جاري ضغط الصورة...";
+
+      try {
+        const originalSize = imageFile.size;
+        imageFile = await compressImageToWebP(imageFile);
+
+        const savedPercent = originalSize ? Math.max(0, (1 - imageFile.size / originalSize) * 100) : 0;
+
+        const processBox = document.getElementById("imageProcessStatus");
+        const processInfo = document.getElementById("imageProcessInfo");
+
+        if (processBox && processInfo) {
+          processBox.style.display = "block";
+          processInfo.innerHTML = `
+    ✅ الحجم الأصلي: ${formatFileSize(originalSize)}<br>
+    📉 بعد الضغط: ${formatFileSize(imageFile.size)}<br>
+    💾 التوفير: ${savedPercent.toFixed(1)}%<br>
+    🔄 جاري رفع WebP إلى Appwrite...
+  `;
+        }
+
+        btn.textContent = "جاري رفع الصورة...";
+      } catch (e) {
+        console.error(e);
+        showToast("❌ فشل ضغط الصورة");
+        btn.disabled = false;
+        btn.textContent = "➕ إضافة المنتج";
+        return;
+      }
+
+      const fileId = `product-${id}`;
+      let uploadedFileId = null;
+
+      try {
+        try {
+          await awStorage.createFile({
+            bucketId: APPWRITE_BUCKET_ID,
+            fileId,
+            file: imageFile,
+            permissions: [AppwritePermission.read(AppwriteRole.any())],
+          });
+          uploadedFileId = fileId;
+        } catch (uploadError) {
+          console.error(uploadError);
+          showToast("❌ فشل رفع الصورة: " + (uploadError.message || uploadError));
+          btn.disabled = false;
+          btn.textContent = "➕ إضافة المنتج";
+          return;
+        }
+
+        const img = appwriteFileViewUrl(fileId);
+
+        btn.textContent = "جاري إضافة المنتج...";
+
+        let newRow;
+        try {
+          newRow = await awTablesDB.createRow({
+            databaseId: APPWRITE_DATABASE_ID,
+            tableId: APPWRITE_TABLE_ID,
+            rowId: String(id),
+            data: {
+              product_id: id,
+              name,
+              price,
+              old_price,
+              category: cat,
+              subcategory: sub,
+              color: color || null,
+              badge: badge || null,
+              image: img,
+              new_until: newUntil,
+              sale: old_price !== null && old_price > price,
+            },
+          });
+        } catch (error) {
+          console.error(error);
+          if (uploadedFileId) await awStorage.deleteFile({ bucketId: APPWRITE_BUCKET_ID, fileId: uploadedFileId });
+          showToast("❌ فشلت إضافة المنتج: " + (error.message || error));
+          btn.disabled = false;
+          btn.textContent = "➕ إضافة المنتج";
+          return;
+        }
+
+        allProducts.push(productFromAppwriteRow(newRow));
+        document.getElementById("productsCount").textContent = allProducts.length;
+        document.getElementById("navProductsCount").textContent = allProducts.length;
+
+        buildCatTabs();
+        renderProductList();
+        clearAddForm();
+
+        showToast("✅ تم رفع الصورة وإضافة المنتج بنجاح");
+      } catch (e) {
+        console.error(e);
+        showToast("❌ صار خطأ أثناء رفع الصورة");
+      }
+
+      btn.disabled = false;
+      btn.textContent = "➕ إضافة المنتج";
     }
-
-    const createdRow =
-      await rowResponse.json();
-
-    console.log(
-      "✅ Appwrite row:",
-      createdRow
-    );
-
-    /* ================= تحديث القائمة محليًا ================= */
-
-    const newProduct = {
-      id: id,
-      name: name,
-      cat: cat,
-      sub: sub,
-      price: price,
-      old_price: old_price,
-      color: color,
-      img: imageUrl,
-      badge: badge,
-      new_until: newUntil,
-      sale:
-        old_price !== null &&
-        old_price > price
-    };
-
-    allProducts.push(
-      newProduct
-    );
-
-    allProducts.sort(
-      (a, b) =>
-        Number(a.id) -
-        Number(b.id)
-    );
-
-    document.getElementById(
-      "productsCount"
-    ).textContent =
-      allProducts.length;
-
-    document.getElementById(
-      "navProductsCount"
-    ).textContent =
-      allProducts.length;
-
-    buildCatTabs();
-    renderProductList();
-    clearAddForm();
-
-    const processBox =
-      document.getElementById(
-        "imageProcessStatus"
-      );
-
-    if (processBox) {
-      processBox.style.display = "none";
-    }
-
-    showToast(
-      "✅ تم رفع الصورة وإضافة المنتج إلى Appwrite"
-    );
-
-  } catch (error) {
-
-    console.error(
-      "APPWRITE ADD PRODUCT ERROR:",
-      error
-    );
-
-    showToast(
-      "❌ فشلت إضافة المنتج: " +
-      (error?.message ||
-        "خطأ غير معروف")
-    );
-
-  } finally {
-
-    btn.disabled = false;
-    btn.textContent =
-      "➕ إضافة المنتج";
-  }
-}
 
     /* ============ فتح / إغلاق نافذة تعديل المنتج ============ */
     function openEditProduct(id) {
@@ -2421,7 +2157,8 @@
       btn.textContent = "جاري الحفظ...";
 
       let newImageUrl = null;
-      let newImagePath = null;
+      let uploadedNewFileId = null;
+      const oldFileId = `product-${oldId}`;
 
       try {
         if (imageFile) {
@@ -2436,44 +2173,89 @@
           const compressedImage = await compressImageToWebP(imageFile);
 
           btn.textContent = "جاري رفع الصورة...";
-          newImagePath = `products/${newId}-${Date.now()}.webp`;
+          const newFileId = `product-${newId}`;
 
-          const { error: uploadError } = await sb.storage
-            .from("product-images")
-            .upload(newImagePath, compressedImage, { cacheControl: "3600", upsert: false, contentType: "image/webp" });
+          // إذا رقم المنتج ما تغيّر، لازم نحذف ملف الصورة القديم أول (نفس الـ fileId) قبل رفع الجديد
+          if (newFileId === oldFileId) {
+            try {
+              await awStorage.deleteFile({ bucketId: APPWRITE_BUCKET_ID, fileId: oldFileId });
+            } catch (e) {
+              if (Number(e?.code) !== 404) throw e;
+            }
+          }
 
-          if (uploadError) throw uploadError;
+          await awStorage.createFile({
+            bucketId: APPWRITE_BUCKET_ID,
+            fileId: newFileId,
+            file: compressedImage,
+            permissions: [AppwritePermission.read(AppwriteRole.any())],
+          });
 
-          const { data: publicUrlData } = sb.storage.from("product-images").getPublicUrl(newImagePath);
-          newImageUrl = publicUrlData.publicUrl;
+          uploadedNewFileId = newFileId;
+          newImageUrl = appwriteFileViewUrl(newFileId);
         }
 
-        const updateData = {
-          id: newId,
+        const existingProduct = allProducts.find(p => Number(p.id) === oldId);
+
+        const rowData = {
+          product_id: newId,
           name,
-          cat,
-          sub,
           price,
           old_price,
+          category: cat,
+          subcategory: sub,
           color,
           badge,
           new_until: badge === "جديد" ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() : null,
-          sale: old_price !== null && old_price > price
+          sale: old_price !== null && old_price > price,
+          image: newImageUrl || existingProduct?.img || null,
         };
-
-        if (newImageUrl) updateData.img = newImageUrl;
 
         btn.textContent = "جاري تحديث المنتج...";
 
-        const { error } = await sb.from("products").update(updateData).eq("id", oldId);
+        let savedRow;
+        try {
+          if (newId === oldId) {
+            savedRow = await awTablesDB.updateRow({
+              databaseId: APPWRITE_DATABASE_ID,
+              tableId: APPWRITE_TABLE_ID,
+              rowId: String(oldId),
+              data: rowData,
+            });
+          } else {
+            // Appwrite ما بيدعم تغيير معرّف الصف (rowId) مباشرة: منعمل صف جديد بالرقم الجديد ومنحذف القديم
+            savedRow = await awTablesDB.createRow({
+              databaseId: APPWRITE_DATABASE_ID,
+              tableId: APPWRITE_TABLE_ID,
+              rowId: String(newId),
+              data: rowData,
+            });
 
-        if (error) {
-          if (newImagePath) await sb.storage.from("product-images").remove([newImagePath]);
+            try {
+              await awTablesDB.deleteRow({ databaseId: APPWRITE_DATABASE_ID, tableId: APPWRITE_TABLE_ID, rowId: String(oldId) });
+            } catch (e) {
+              console.warn("تعذّر حذف الصف القديم بعد تغيير رقم المنتج:", e);
+            }
+
+            // إذا انرفعت صورة جديدة برقم المنتج الجديد، منحذف ملف الصورة القديم (برقم المنتج القديم)
+            if (uploadedNewFileId) {
+              try {
+                await awStorage.deleteFile({ bucketId: APPWRITE_BUCKET_ID, fileId: oldFileId });
+              } catch (e) {
+                if (Number(e?.code) !== 404) console.warn("تعذّر حذف صورة المنتج القديمة:", e);
+              }
+            }
+          }
+        } catch (error) {
+          if (uploadedNewFileId) {
+            try { await awStorage.deleteFile({ bucketId: APPWRITE_BUCKET_ID, fileId: uploadedNewFileId }); } catch (_) {}
+          }
           throw error;
         }
 
         const index = allProducts.findIndex(p => Number(p.id) === oldId);
-        if (index !== -1) allProducts[index] = { ...allProducts[index], ...updateData };
+        const updatedProduct = productFromAppwriteRow(savedRow);
+        if (index !== -1) allProducts[index] = updatedProduct; else allProducts.push(updatedProduct);
 
         buildCatTabs();
         renderProductList();
@@ -2494,10 +2276,16 @@
       const listEl = document.getElementById("ordersList");
       listEl.innerHTML = `<div class="loading-state">جاري التحميل...</div>`;
 
-      const { data, error } = await sb.from("orders").select("*").order("created_at", { ascending: false });
-
-      if (error) {
-        listEl.innerHTML = `<div class="empty-state">صار خطأ بجلب الطلبات: ${error.message}<br>(تأكد إنك نفّذت migration_accounts_orders.sql وحطيت is_admin = true لحسابك)</div>`;
+      let data = [];
+      try {
+        const res = await awTablesDB.listRows({
+          databaseId: APPWRITE_DATABASE_ID,
+          tableId: APPWRITE_ORDERS_TABLE_ID,
+          queries: [AppwriteQuery.orderDesc("$createdAt"), AppwriteQuery.limit(500)],
+        });
+        data = res.rows || res.documents || [];
+      } catch (error) {
+        listEl.innerHTML = `<div class="empty-state">صار خطأ بجلب الطلبات: ${error.message || error}<br>(تأكد إنك مضاف لفريق الأدمن وإنه صلاحيات جدول orders معمولة صح بلوحة Appwrite)</div>`;
         return;
       }
 
@@ -2510,12 +2298,12 @@
       document.getElementById("navOrdersCount").textContent = data.length;
 
       listEl.innerHTML = data.map(o => {
-        const date = new Date(o.created_at).toLocaleString("ar-EG", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
-        const items = o.items || [];
+        const date = new Date(o.$createdAt).toLocaleString("ar-EG", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+        const items = typeof o.items === "string" ? JSON.parse(o.items || "[]") : (o.items || []);
         return `
       <div class="order-card">
         <div class="order-head">
-          <span class="order-id">🧾 طلب #${o.id}</span>
+          <span class="order-id">🧾 طلب #${o.$id}</span>
           <span class="order-total">${o.total}$</span>
         </div>
         <div class="order-meta">
@@ -2533,8 +2321,12 @@
 
     /* ============ التحقق من الجلسة عند فتح الصفحة ============ */
     (async function checkSession() {
-      const { data } = await sb.auth.getSession();
-      if (data && data.session) showDashboard();
+      try {
+        await awAccount.get();
+        showDashboard();
+      } catch (e) {
+        // ما في جلسة محفوظة، تضل شاشة تسجيل الدخول ظاهرة
+      }
     })();
 
     document.getElementById("loginPassword").addEventListener("keydown", e => {

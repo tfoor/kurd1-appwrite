@@ -1937,133 +1937,375 @@
     }
 
     async function addProduct() {
-      const btn = document.getElementById("addProductBtn");
+  const btn = document.getElementById("addProductBtn");
 
-      const id = parseInt(document.getElementById("newId").value, 10);
-      const name = document.getElementById("newName").value.trim();
-      const cat = document.getElementById("newCat").value.trim() || null;
-      const sub = document.getElementById("newSub").value.trim() || null;
-      const price = parseFloat(document.getElementById("newPrice").value);
+  const id = parseInt(
+    document.getElementById("newId").value,
+    10
+  );
 
-      const oldPriceRaw = document.getElementById("newOldPrice").value;
-      const old_price = oldPriceRaw === "" ? null : parseFloat(oldPriceRaw);
+  const name = document
+    .getElementById("newName")
+    .value
+    .trim();
 
-      const color = document.getElementById("newColor").value.trim() || null;
-      const badge = document.getElementById("newBadge").value.trim() || null;
-      const newUntil = badge === "جديد" ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() : null;
+  const cat =
+    document.getElementById("newCat").value.trim() || null;
 
-      let imageFile = document.getElementById("newImgFile").files[0];
+  const sub =
+    document.getElementById("newSub").value.trim() || null;
 
-      if (!Number.isInteger(id) || id <= 0 || !name || Number.isNaN(price) || price < 0) {
-        showToast("⚠️ عبّي رقم المنتج والاسم والسعر بشكل صحيح");
-        return;
-      }
+  const price = parseFloat(
+    document.getElementById("newPrice").value
+  );
 
-      if (old_price !== null && (Number.isNaN(old_price) || old_price < 0)) {
-        showToast("⚠️ السعر القديم غير صحيح");
-        return;
-      }
+  const oldPriceRaw =
+    document.getElementById("newOldPrice").value;
 
-      if (allProducts.some(p => Number(p.id) === id)) {
-        showToast("⚠️ رقم المنتج موجود مسبقًا");
-        return;
-      }
+  const old_price =
+    oldPriceRaw === ""
+      ? null
+      : parseFloat(oldPriceRaw);
 
-      if (!imageFile) {
-        showToast("⚠️ اختر صورة للمنتج");
-        return;
-      }
+  const color =
+    document.getElementById("newColor").value.trim() || null;
 
-      if (!imageFile.type.startsWith("image/")) {
-        showToast("⚠️ الملف المختار ليس صورة");
-        return;
-      }
+  const badge =
+    document.getElementById("newBadge").value.trim() || null;
 
-      btn.disabled = true;
-      btn.textContent = "جاري ضغط الصورة...";
+  const newUntil =
+    badge === "جديد"
+      ? new Date(
+          Date.now() + 7 * 24 * 60 * 60 * 1000
+        ).toISOString()
+      : null;
 
-      try {
-        const originalSize = imageFile.size;
-        imageFile = await compressImageToWebP(imageFile);
+  let imageFile =
+    document.getElementById("newImgFile").files[0];
 
-        const savedPercent = originalSize ? Math.max(0, (1 - imageFile.size / originalSize) * 100) : 0;
+  /* ================= التحقق ================= */
 
-        const processBox = document.getElementById("imageProcessStatus");
-        const processInfo = document.getElementById("imageProcessInfo");
+  if (
+    !Number.isInteger(id) ||
+    id <= 0 ||
+    !name ||
+    Number.isNaN(price) ||
+    price < 0
+  ) {
+    showToast(
+      "⚠️ عبّي رقم المنتج والاسم والسعر بشكل صحيح"
+    );
+    return;
+  }
 
-        if (processBox && processInfo) {
-          processBox.style.display = "block";
-          processInfo.innerHTML = `
-    ✅ الحجم الأصلي: ${formatFileSize(originalSize)}<br>
-    📉 بعد الضغط: ${formatFileSize(imageFile.size)}<br>
-    💾 التوفير: ${savedPercent.toFixed(1)}%<br>
-    🔄 جاري رفع WebP إلى Supabase...
-  `;
-        }
+  if (
+    old_price !== null &&
+    (Number.isNaN(old_price) || old_price < 0)
+  ) {
+    showToast("⚠️ السعر القديم غير صحيح");
+    return;
+  }
 
-        btn.textContent = "جاري رفع الصورة...";
-      } catch (e) {
-        console.error(e);
-        showToast("❌ فشل ضغط الصورة");
-        btn.disabled = false;
-        btn.textContent = "➕ إضافة المنتج";
-        return;
-      }
+  if (
+    allProducts.some(
+      p => Number(p.id) === id
+    )
+  ) {
+    showToast(
+      "⚠️ رقم المنتج موجود مسبقًا"
+    );
+    return;
+  }
 
-      try {
-        const fileExt = imageFile.name.split(".").pop().toLowerCase();
-        const fileName = `${id}-${Date.now()}.${fileExt}`;
-        const filePath = `products/${fileName}`;
+  if (!imageFile) {
+    showToast("⚠️ اختر صورة للمنتج");
+    return;
+  }
 
-        const { error: uploadError } = await sb.storage
-          .from("product-images")
-          .upload(filePath, imageFile, { cacheControl: "3600", upsert: false, contentType: imageFile.type });
+  if (!imageFile.type.startsWith("image/")) {
+    showToast(
+      "⚠️ الملف المختار ليس صورة"
+    );
+    return;
+  }
 
-        if (uploadError) {
-          console.error(uploadError);
-          showToast("❌ فشل رفع الصورة: " + uploadError.message);
-          btn.disabled = false;
-          btn.textContent = "➕ إضافة المنتج";
-          return;
-        }
+  btn.disabled = true;
+  btn.textContent = "جاري ضغط الصورة...";
 
-        const { data: publicUrlData } = sb.storage.from("product-images").getPublicUrl(filePath);
-        const img = publicUrlData.publicUrl;
+  let uploadedFileId = null;
 
-        btn.textContent = "جاري إضافة المنتج...";
+  try {
+    /* ================= ضغط الصورة ================= */
 
-        const { data, error } = await sb
-          .from("products")
-          .insert({ id, name, cat, sub, price, old_price, color, img, badge, new_until: newUntil, sale: old_price !== null && old_price > price })
-          .select()
-          .single();
+    const originalSize = imageFile.size;
 
-        if (error) {
-          console.error(error);
-          await sb.storage.from("product-images").remove([filePath]);
-          showToast("❌ فشلت إضافة المنتج: " + error.message);
-          btn.disabled = false;
-          btn.textContent = "➕ إضافة المنتج";
-          return;
-        }
+    imageFile =
+      await compressImageToWebP(imageFile);
 
-        allProducts.push(data);
-        document.getElementById("productsCount").textContent = allProducts.length;
-        document.getElementById("navProductsCount").textContent = allProducts.length;
+    const savedPercent =
+      originalSize
+        ? Math.max(
+            0,
+            (1 -
+              imageFile.size /
+                originalSize) *
+              100
+          )
+        : 0;
 
-        buildCatTabs();
-        renderProductList();
-        clearAddForm();
+    const processInfo =
+      document.getElementById(
+        "imageProcessInfo"
+      );
 
-        showToast("✅ تم رفع الصورة وإضافة المنتج بنجاح");
-      } catch (e) {
-        console.error(e);
-        showToast("❌ صار خطأ أثناء رفع الصورة");
-      }
+    if (processBox && processInfo) {
+      processBox.style.display = "block";
 
-      btn.disabled = false;
-      btn.textContent = "➕ إضافة المنتج";
+      processInfo.innerHTML = `
+        ✅ الحجم الأصلي:
+        ${formatFileSize(originalSize)}<br>
+
+        📉 بعد الضغط:
+        ${formatFileSize(imageFile.size)}<br>
+
+        💾 التوفير:
+        ${savedPercent.toFixed(1)}%<br>
+
+        🔄 جاري رفع WebP إلى Appwrite...
+      `;
     }
+
+    /* ================= رفع الصورة إلى Appwrite ================= */
+
+    btn.textContent =
+      "جاري رفع الصورة إلى Appwrite...";
+
+    uploadedFileId =
+      `product-${id}-${Date.now()}`;
+
+    const formData = new FormData();
+
+    formData.append(
+      "fileId",
+      uploadedFileId
+    );
+
+    formData.append(
+      "file",
+      imageFile,
+      `${id}.webp`
+    );
+
+    const uploadResponse =
+      await fetch(
+        `${APPWRITE_ENDPOINT}/storage/buckets/` +
+        `${APPWRITE_BUCKET_ID}/files`,
+        {
+          method: "POST",
+
+          headers: {
+            "X-Appwrite-Project":
+              APPWRITE_PROJECT_ID
+          },
+
+          body: formData
+        }
+      );
+
+    if (!uploadResponse.ok) {
+      const errorText =
+        await uploadResponse.text();
+
+      throw new Error(
+        `فشل رفع الصورة HTTP ${uploadResponse.status}: ${errorText}`
+      );
+    }
+
+    const uploadedFile =
+      await uploadResponse.json();
+
+    console.log(
+      "✅ Appwrite file:",
+      uploadedFile
+    );
+
+    /* ================= رابط الصورة ================= */
+
+    const imageUrl =
+      `${APPWRITE_ENDPOINT}` +
+      `/storage/buckets/` +
+      `${APPWRITE_BUCKET_ID}` +
+      `/files/` +
+      `${uploadedFileId}` +
+      `/view?project=` +
+      `${encodeURIComponent(
+        APPWRITE_PROJECT_ID
+      )}`;
+
+    /* ================= إضافة المنتج ================= */
+
+    btn.textContent =
+      "جاري إضافة المنتج إلى Appwrite...";
+
+    const rowData = {
+      product_id: id,
+      name: name,
+      price: price,
+      old_price: old_price,
+      category: cat,
+      subcategory: sub,
+      color: color,
+      badge: badge,
+      image: imageUrl,
+      new_until: newUntil,
+      sale:
+        old_price !== null &&
+        old_price > price
+    };
+
+    const rowResponse =
+      await fetch(
+        `${APPWRITE_ENDPOINT}/tablesdb/` +
+        `${APPWRITE_DATABASE_ID}/tables/` +
+        `${APPWRITE_TABLE_ID}/rows`,
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json",
+
+            "Accept":
+              "application/json",
+
+            "X-Appwrite-Project":
+              APPWRITE_PROJECT_ID
+          },
+
+          body: JSON.stringify({
+            rowId: String(id),
+            data: rowData
+          })
+        }
+      );
+
+    if (!rowResponse.ok) {
+      const errorText =
+        await rowResponse.text();
+
+      /* محاولة حذف الصورة إذا فشل إنشاء المنتج */
+
+      try {
+        await fetch(
+          `${APPWRITE_ENDPOINT}` +
+          `/storage/buckets/` +
+          `${APPWRITE_BUCKET_ID}` +
+          `/files/` +
+          `${uploadedFileId}`,
+          {
+            method: "DELETE",
+
+            headers: {
+              "X-Appwrite-Project":
+                APPWRITE_PROJECT_ID
+            }
+          }
+        );
+      } catch (cleanupError) {
+        console.warn(
+          "تعذر حذف الصورة بعد فشل المنتج:",
+          cleanupError
+        );
+      }
+
+      throw new Error(
+        `فشلت إضافة المنتج HTTP ${rowResponse.status}: ${errorText}`
+      );
+    }
+
+    const createdRow =
+      await rowResponse.json();
+
+    console.log(
+      "✅ Appwrite row:",
+      createdRow
+    );
+
+    /* ================= تحديث القائمة محليًا ================= */
+
+    const newProduct = {
+      id: id,
+      name: name,
+      cat: cat,
+      sub: sub,
+      price: price,
+      old_price: old_price,
+      color: color,
+      img: imageUrl,
+      badge: badge,
+      new_until: newUntil,
+      sale:
+        old_price !== null &&
+        old_price > price
+    };
+
+    allProducts.push(
+      newProduct
+    );
+
+    allProducts.sort(
+      (a, b) =>
+        Number(a.id) -
+        Number(b.id)
+    );
+
+    document.getElementById(
+      "productsCount"
+    ).textContent =
+      allProducts.length;
+
+    document.getElementById(
+      "navProductsCount"
+    ).textContent =
+      allProducts.length;
+
+    buildCatTabs();
+    renderProductList();
+    clearAddForm();
+
+    const processBox =
+      document.getElementById(
+        "imageProcessStatus"
+      );
+
+    if (processBox) {
+      processBox.style.display = "none";
+    }
+
+    showToast(
+      "✅ تم رفع الصورة وإضافة المنتج إلى Appwrite"
+    );
+
+  } catch (error) {
+
+    console.error(
+      "APPWRITE ADD PRODUCT ERROR:",
+      error
+    );
+
+    showToast(
+      "❌ فشلت إضافة المنتج: " +
+      (error?.message ||
+        "خطأ غير معروف")
+    );
+
+  } finally {
+
+    btn.disabled = false;
+    btn.textContent =
+      "➕ إضافة المنتج";
+  }
+}
 
     /* ============ فتح / إغلاق نافذة تعديل المنتج ============ */
     function openEditProduct(id) {

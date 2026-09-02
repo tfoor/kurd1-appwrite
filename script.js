@@ -702,15 +702,42 @@ allProducts = rows.map(row => {
     allProducts = allProductsFallback;
   }
 
-  products = allProducts.filter(
-    p =>
-      p &&
-      p.name &&
-      p.cat &&
-      !HIDDEN_CATEGORIES.includes(p.cat) &&
-      !HIDDEN_PRODUCT_IDS.includes(p.id)
-  );
+const appwriteProducts = allProducts || [];
 
+// المنتجات الموجودة في Appwrite لها الأولوية
+const appwriteIds = new Set(
+  appwriteProducts.map(p => Number(p.id))
+);
+
+// أضف المنتجات الناقصة من النسخة الاحتياطية
+const missingFallbackProducts = allProductsFallback.filter(
+  p => !appwriteIds.has(Number(p.id))
+);
+
+// دمج Appwrite + المنتجات الاحتياطية
+allProducts = [
+  ...appwriteProducts,
+  ...missingFallbackProducts
+];
+
+products = allProducts.filter(
+  p =>
+    p &&
+    p.name &&
+    p.cat &&
+    !HIDDEN_CATEGORIES.includes(p.cat) &&
+    !HIDDEN_PRODUCT_IDS.includes(p.id)
+);
+
+console.log("📦 إجمالي منتجات المعرض:", products.length);
+console.log(
+  "☁️ منتجات Appwrite:",
+  appwriteProducts.length
+);
+console.log(
+  "📁 منتجات احتياطية مضافة:",
+  missingFallbackProducts.length
+);
   console.log("📦 منتجات المعرض:", products);
 }
 

@@ -246,58 +246,103 @@ function toggleTheme() {
 }
 applyTheme(localStorage.getItem("boutique_theme") || "light");
 
+/* ============ Appwrite التجريبي ============ */
 
+const APPWRITE_ENDPOINT =
+  "https://fra.cloud.appwrite.io/v1";
 
-/* ============ الاتصال بـ Appwrite (المنتجات + الصور + تسجيل الدخول + الطلبات + الزيارات) ============ */
-const APPWRITE_ENDPOINT = "https://fra.cloud.appwrite.io/v1";
-const APPWRITE_PROJECT_ID = "6a9321f3002b6c1004a9";
-const APPWRITE_DATABASE_ID = "6a93224c002e35f858b8";
-const APPWRITE_TABLE_ID = "Products";
-// ⚠️ عدّلي هاي الـ IDs الثلاثة إذا كانت مختلفة عندك بلوحة Appwrite (Databases → اسم الجدول الفعلي)
-const APPWRITE_ORDERS_TABLE_ID = "orders";
-const APPWRITE_VISITS_TABLE_ID = "visits";
-const APPWRITE_EMAIL_LOGS_TABLE_ID = "customer_email_logs";
+const APPWRITE_PROJECT_ID =
+  "6a9321f3002b6c1004a9";
 
-const awClient = new Appwrite.Client()
-  .setEndpoint(APPWRITE_ENDPOINT)
-  .setProject(APPWRITE_PROJECT_ID);
-const awTablesDB = new Appwrite.TablesDB(awClient);
-const awAccount = new Appwrite.Account(awClient);
-const AppwriteQuery = Appwrite.Query;
-const AppwriteID = Appwrite.ID;
-const AppwritePermission = Appwrite.Permission;
-const AppwriteRole = Appwrite.Role;
+const APPWRITE_DATABASE_ID =
+  "6a93224c002e35f858b8";
 
+const APPWRITE_TABLE_ID =
+  "Products";
+/* ============ Appwrite Web SDK ============ */
+// ⚠️ مهم: إذا فشل تحميل مكتبة Appwrite (بسبب انقطاع إنترنت، حجب CDN، أو أدبلوكر)
+// فـ "Appwrite" ما تكون معرّفة، وأي كود يحاول يستخدمها مباشرة بدون try/catch
+// رح يوقف تنفيذ باقي الملف كامل (يعني حتى المنتجات الاحتياطية ما تظهر).
+// هالتغليف يمنع هالمشكلة: إذا فشل التحميل، الموقع يكمل شغل بالوضع الاحتياطي.
+let client = null;
+let account = null;
+let tablesDB = null;
+
+try {
+  if (typeof Appwrite === "undefined") {
+    throw new Error("مكتبة Appwrite ما انحملت (تحقق من الاتصال بالإنترنت أو حاجب الإعلانات)");
+  }
+
+  client = new Appwrite.Client();
+
+  client
+    .setEndpoint(APPWRITE_ENDPOINT)
+    .setProject(APPWRITE_PROJECT_ID);
+
+  account = new Appwrite.Account(client);
+  tablesDB = new Appwrite.TablesDB(client);
+} catch (e) {
+  console.warn("⚠️ تعذّر تهيئة Appwrite، رح يشتغل الموقع بالمنتجات الاحتياطية فقط:", e);
+}
 /* مفتاح يحفظ إشارة إنه في طلب فاتورة معلّق بانتظار تسجيل الدخول (يستخدم خصوصاً
    مع تسجيل الدخول عبر Google، لأنه بيعمل تحويل كامل للصفحة ورجوع منها) */
 const PENDING_CHECKOUT_KEY = "boutique_pending_checkout";
 
-/* عند فتح الصفحة، نتأكد إذا في جلسة محفوظة (بما فيها حالة الرجوع من تسجيل الدخول عبر Google،
-   لأنه Appwrite بيثبّت الجلسة (كوكي) قبل ما يرجّع المستخدم للصفحة) */
-(async function initCustomerSession() {
+/* ============ مراقبة جلسة Appwrite ============ */
+
+async function syncAppwriteSession() {
   try {
-    customerSession = await awAccount.get();
-  } catch (e) {
+    const user = await account.get();
+
+    customerSession = {
+      user: user
+    };
+
+    updateAccountButtonAvatar(customerSession);
+
+    return customerSession;
+
+  } catch (error) {
+    // عدم وجود جلسة تسجيل دخول = حالة طبيعية
     customerSession = null;
+    updateAccountButtonAvatar(null);
+
+    return null;
   }
-  updateAccountButtonAvatar(customerSession);
-  if (customerSession) {
+}
+
+/* فحص الجلسة عند فتح الموقع */
+syncAppwriteSession().then((session) => {
+  if (session) {
     completePendingCheckoutIfAny();
   }
-})();
+});
 
-/* يحدّث شكل زر الحساب بالهيدر. ملاحظة: بعكس Supabase، Appwrite ما بيخزّن صورة حساب Google
-   تلقائياً بكائن المستخدم، فهلق دايماً منعرض الأيقونة الافتراضية بدل الصورة الشخصية */
-function updateAccountButtonAvatar(user) {
+/* فحص الجلسة عند الرجوع للصفحة */
+window.addEventListener("focus", async () => {
+  const session = await syncAppwriteSession();
+
+  if (session) {
+    completePendingCheckoutIfAny();
+  }
+});
+/* يحدّث شكل زر الحساب بالهيدر: يعرض صورة حساب Google إذا كانت متوفرة، وإلا الأيقونة الافتراضية */
+function updateAccountButtonAvatar(session) {
   const btn = document.getElementById("accountBtn");
   const img = document.getElementById("accountAvatarImg");
   if (!btn || !img) return;
-  img.removeAttribute("src");
-  btn.classList.remove("has-avatar");
+  const avatarUrl = session?.user?.user_metadata?.avatar_url || session?.user?.user_metadata?.picture || "";
+  if (avatarUrl) {
+    img.src = avatarUrl;
+    btn.classList.add("has-avatar");
+  } else {
+    img.removeAttribute("src");
+    btn.classList.remove("has-avatar");
+  }
 }
 
-/* ============ بيانات المنتجات (تُجلب من Appwrite) ============ */
-// كل التعديلات على الأسماء والأسعار وإضافة/حذف منتجات تصير من لوحة Appwrite (Databases)
+/* ============ بيانات المنتجات (تُجلب من Supabase) ============ */
+// كل التعديلات على الأسماء والأسعار وإضافة/حذف منتجات تصير من لوحة Supabase (Table Editor)
 // أو من صفحة admin.html الخاصة، مو من هالملف.
 const allProductsFallback = [
   { id: 214, name: "طقم تيشيرت وبنطلون كاروهات للأطفال", cat: "أطفال", sub: "بناتي", price: 17.34, img: "kids/1.webp" },
@@ -307,7 +352,7 @@ const allProductsFallback = [
   { id: 236, name: "توب ازرق وبنطلون كارديجان", cat: "أطفال", sub: "بناتي", price: 13.80, img: "kids/6.webp", badge: "جديد" },
   { id: 237, name: "بلوز رياضي بياقة دائري مطبوع بفيونكة", cat: "أطفال", sub: "بناتي", price: 9.99, img: "kids/7.webp", badge: "جديد" },
   { id: 238, name: "تي شيرت قصير الأكمام و بنطلون كارغو وردي للفتيات", cat: "أطفال", sub: "بناتي", price: 12.99, img: "kids/8.webp", badge: "جديد" },
-  
+
   // رجالي 
   { id: 1, name: "طقم رجالي أبيض قميص بأزرار وبنطال مريح", cat: "رجالي", sub: "أطقم منسقة", price: 19, color: "أبيض", img: "men's/1.webp", badge: "" },
   { id: 2, name: "طقم بولو رجالي 3 قطع بألوان كلاسيكية", cat: "رجالي", sub: "ملابس علوية", price: 25.23, color: "", img: "men's/2.webp", badge: "" },
@@ -360,7 +405,7 @@ const allProductsFallback = [
   { id: 160, name: "طقم بيج كارديجان وبنطلون", cat: "نسائي", sub: "أطقم منسقة", price: 19.79, img: "female/21.webp" },
   { id: 161, name: "كارديجان بيج", cat: "نسائي", sub: "ملابس علوية", price: 9.98, img: "female/22.webp" },
   { id: 162, name: "طقم بيج بنطلون وبلوزة", cat: "نسائي", sub: "أطقم منسقة", price: 15.70, img: "female/23.webp" },
- // { id: 163, name: "طقم بيج توب وبنطلون مع شنطة", cat: "نسائي", sub: "أطقم منسقة", price: 15.70, img: "female/24.webp" },
+  // { id: 163, name: "طقم بيج توب وبنطلون مع شنطة", cat: "نسائي", sub: "أطقم منسقة", price: 15.70, img: "female/24.webp" },
   { id: 164, name: "تنورة سوداء طويلة", cat: "نسائي", sub: "تنانير", price: 16.25, img: "female/25.webp" },
   { id: 165, name: "طقم بني بلوزة وبنطلون", cat: "نسائي", sub: "أطقم منسقة", price: 18.15, img: "female/26.webp" },
   { id: 166, name: "فستان أبيض بأزرار", cat: "نسائي", sub: "فساتين", price: 15.43, img: "female/27.webp" },
@@ -431,14 +476,14 @@ const allProductsFallback = [
   { id: 65, name: "شنطة يد بيضاء بتفاصيل مطرزة", cat: "إكسسوارات", sub: "جنط", price: 14.7, img: "accessories/4.webp" },
   { id: 72, name: "كفر آيفون وردي مع حبل حمل", cat: "إكسسوارات", sub: "اكسسوارات موبايل", price: 5.8, img: "accessories/5.webp" },
   { id: 73, name: "كفر آيفون فوشيا", cat: "إكسسوارات", sub: "اكسسوارات موبايل", price: 5.8, img: "accessories/6.webp" },
-  { id: 76, name: "قلادة شمس ", cat: "إكسسوارات", sub: "مجوهرات", price: 3.75, img: "accessories/45.webp" ,badge: "جديد"},
+  { id: 76, name: "قلادة شمس ", cat: "إكسسوارات", sub: "مجوهرات", price: 3.75, img: "accessories/45.webp", badge: "جديد" },
   { id: 77, name: "طقم جوارب 5 ازواج الوان متنوع رمادي و ابيض وأسود", cat: "إكسسوارات", sub: "جوارب", price: 5.08, img: "accessories/8.webp" },
   { id: 78, name: "طقم ساعة فضي وذهبي", cat: "إكسسوارات", sub: "ساعات", price: 19.24, img: "accessories/9.webp" },
   { id: 79, name: "طقم خواتم ذهبية معلقة (9) ", cat: "إكسسوارات", sub: "مجوهرات", price: 2.63, img: "accessories/10.webp" },
   { id: 81, name: "شنطة يد سوداء بتفصيل وشاح", cat: "إكسسوارات", sub: "جنط", price: 7.26, img: "accessories/11.webp" },
   { id: 83, name: "سوار انفينتي ذهبي", cat: "إكسسوارات", sub: "مجوهرات", price: 2.63, img: "accessories/12.webp" },
   { id: 93, name: "شنطة قش بيضاء بزهرة", cat: "إكسسوارات", sub: "جنط", price: 8.71, img: "accessories/14.webp" },
-  { id: 94, name: "قلادة شمس ذهبية", cat: "إكسسوارات", sub: "مجوهرات", price: 11.90, img: "accessories/46.webp" ,badge: "جديد"},
+  { id: 94, name: "قلادة شمس ذهبية", cat: "إكسسوارات", sub: "مجوهرات", price: 11.90, img: "accessories/46.webp", badge: "جديد" },
   { id: 98, name: "شنطة كتف سوداء بفيونكة", cat: "إكسسوارات", sub: "جنط", price: 15.16, img: "accessories/16.webp" },
   { id: 99, name: "جوارب متوسطة الطول للأطفال/البنات 20", cat: "إكسسوارات", sub: " جوارب", price: 5.36, img: "accessories/17.webp" },
   { id: 100, name: "طقم أساور ذهبية 10 قطع", cat: "إكسسوارات", sub: "مجوهرات", price: 5.10, img: "accessories/18.webp" },
@@ -467,8 +512,8 @@ const allProductsFallback = [
   { id: 151, name: "سوار خرز فضي وأزرق", cat: "إكسسوارات", sub: "مجوهرات", price: 2.09, img: "accessories/39.webp" },
   { id: 153, name: "طقم ساعة ومجوهرات 5 قطع", cat: "إكسسوارات", sub: "ساعات", price: 4.30, img: "accessories/40.webp" },
   { id: 154, name: "طقم مشابك شعر وردية 100 قطعة", cat: "إكسسوارات", sub: "إكسسوارات شعر", price: 3.18, img: "accessories/41.webp" },
-  { id: 234, name: "قلادة شمس وقمر ذهبية", cat: "إكسسوارات", sub: "مجوهرات", price: 3.25, img: "accessories/47.webp" ,badge: "جديد"},
-  { id: 239, name: "قلادة شمس فضية", cat: "إكسسوارات", sub: "مجوهرات", price: 3.75, img: "accessories/48.webp"  ,badge: "جديد"},
+  { id: 234, name: "قلادة شمس وقمر ذهبية", cat: "إكسسوارات", sub: "مجوهرات", price: 3.25, img: "accessories/47.webp", badge: "جديد" },
+  { id: 239, name: "قلادة شمس فضية", cat: "إكسسوارات", sub: "مجوهرات", price: 3.75, img: "accessories/48.webp", badge: "جديد" },
 
 
 
@@ -549,88 +594,134 @@ const HIDDEN_PRODUCT_IDS = [];
 let allProducts = [];
 let products = [];
 
-/* يجيب كل صفوف المنتجات من جدول Products بـ Appwrite (بصفحات، لأنه أقصى حد
-   للطلب الوحد هو 500 صف). */
-async function fetchAllAppwriteProducts() {
-  const step = 500;
-  let offset = 0;
-  const rows = [];
-  while (true) {
-    const res = await awTablesDB.listRows({
-      databaseId: APPWRITE_DATABASE_ID,
-      tableId: APPWRITE_TABLE_ID,
-      queries: [
-        AppwriteQuery.orderAsc("product_id"),
-        AppwriteQuery.limit(step),
-        AppwriteQuery.offset(offset),
-      ],
-    });
-    const batch = res.rows || res.documents || [];
-    if (!batch.length) break;
-    rows.push(...batch);
-    if (batch.length < step) break;
-    offset += step;
-  }
-  return rows;
-}
-
-/* يجيب المنتجات من جدول Products بـ Appwrite. إذا صار خطأ اتصال (مثلاً النت واقف)
-   يرجع يستخدم النسخة الاحتياطية allProductsFallback مشان الموقع يضل شغال. */
 async function loadProducts() {
   try {
-    const rows = await fetchAllAppwriteProducts();
-    if (!rows || !rows.length) throw new Error("empty");
-    allProducts = rows.map(row => ({
-      id: row.product_id,
-      name: row.name,
-      cat: row.category,
-      sub: row.subcategory,
-      price: Number(row.price),
-      oldPrice: row.old_price !== null && row.old_price !== undefined ? Number(row.old_price) : undefined,
-      color: row.color || undefined,
-      img: row.image,
-      badge:
-  row.badge === "جديد" &&
-  row.new_until &&
-  new Date(row.new_until) > new Date()
-    ? "جديد"
-    : row.badge === "جديد"
-      ? undefined
-      : (row.badge || undefined),
+    const result = await tablesDB.listRows({
+      databaseId: APPWRITE_DATABASE_ID,
+      tableId: APPWRITE_TABLE_ID
+    });
 
-newUntil: row.new_until || null,
-      sale: !!row.sale,
-    }));
+    const rows = Array.isArray(result.rows)
+      ? result.rows
+      : [];
+
+    if (!rows.length) {
+      throw new Error("Appwrite لم يرجع أي منتجات");
+    }
+
+    allProducts = rows.map(row => {
+      const data = row.data || {};
+
+      return {
+        id:
+          data.product_id !== undefined &&
+            data.product_id !== null
+            ? Number(data.product_id)
+            : Number(data.id || row.$id),
+
+        name: data.name || "",
+
+        cat:
+          data.category ||
+          data.cat ||
+          "",
+
+        sub:
+          data.subcategory ||
+          data.sub ||
+          "",
+
+        price:
+          Number(data.price || 0),
+
+        oldPrice:
+          data.old_price !== undefined &&
+            data.old_price !== null
+            ? Number(data.old_price)
+            : undefined,
+
+        color:
+          data.color ||
+          undefined,
+        img:
+          data.image ||
+          data.img ||
+          allProductsFallback.find(
+            x => Number(x.id) === Number(
+              data.product_id !== undefined &&
+                data.product_id !== null
+                ? data.product_id
+                : data.id || row.$id
+            )
+          )?.img ||
+          "",
+
+        badge:
+          data.badge === "جديد" &&
+            data.new_until &&
+            new Date(data.new_until) > new Date()
+            ? "جديد"
+            : data.badge === "جديد"
+              ? undefined
+              : (data.badge || undefined),
+
+        newUntil:
+          data.new_until ||
+          null,
+
+        sale:
+          !!data.sale
+      };
+    });
+
+    console.log(
+      `✅ Appwrite: تم تحميل ${allProducts.length} منتج`
+    );
+
   } catch (e) {
-    console.warn("تعذّر جلب المنتجات من Appwrite، تم استخدام النسخة الاحتياطية:", e);
+    console.warn(
+      "تعذّر جلب المنتجات من Appwrite، تم استخدام النسخة الاحتياطية:",
+      e
+    );
+
     allProducts = allProductsFallback;
   }
-  products = allProducts.filter(p => !HIDDEN_CATEGORIES.includes(p.cat) && !HIDDEN_PRODUCT_IDS.includes(p.id));
+
+  products = allProducts.filter(
+    p =>
+      p &&
+      p.name &&
+      p.cat &&
+      !HIDDEN_CATEGORIES.includes(p.cat) &&
+      !HIDDEN_PRODUCT_IDS.includes(p.id)
+  );
+
+  console.log("📦 منتجات المعرض:", products);
 }
 
-/* يسجّل زيارة جديدة بجدول visits (بدون ما يوقف تحميل الموقع لو صار خطأ) */
+/* ============ تسجيل زيارة في Appwrite ============ */
+
 async function logVisit() {
   try {
-    let user = null;
-    try { user = await awAccount.get(); } catch (e) { user = null; }
-
-    const visitData = {
-      user_id: user?.$id || null,
-      user_email: user?.email || null,
-      visitor_name: user?.name || null
-    };
-
-    await awTablesDB.createRow({
+    await tablesDB.createRow({
       databaseId: APPWRITE_DATABASE_ID,
-      tableId: APPWRITE_VISITS_TABLE_ID,
-      rowId: AppwriteID.unique(),
-      data: visitData,
+      tableId: "visits",
+      rowId: crypto.randomUUID(),
+      data: {
+        user_id: null,
+        visitor_name: null
+      }
     });
+
+    console.log("تم تسجيل الزيارة ✅");
+
   } catch (error) {
-    console.error("VISIT ERROR:", error);
+    console.error(
+      "APPWRITE VISIT ERROR:",
+      error
+    );
   }
 }
-
 const categories = ["الكل", "رجالي", "نسائي", "أطفال", "أحذية", "إكسسوارات", "مكياج", "أدوات منزلية"];
 const catKeyMap = { "الكل": "cat_all", "رجالي": "cat_men", "نسائي": "cat_women", "أطفال": "cat_kids", "أحذية": "cat_shoes", "إكسسوارات": "cat_acc", "مكياج": "cat_makeup", "أدوات منزلية": "cat_home" };
 
@@ -664,7 +755,7 @@ function loadCartFromStorage() {
   } catch (e) { return []; }
 }
 function saveCartToStorage() {
-  try { localStorage.setItem("boutique_cart", JSON.stringify(cart)); } catch (e) {}
+  try { localStorage.setItem("boutique_cart", JSON.stringify(cart)); } catch (e) { }
 }
 let cart = loadCartFromStorage(); // {id, qty}
 
@@ -1004,112 +1095,432 @@ function toggleAccPassword(inputId, btn) {
 }
 
 /* اسم الزبون المعروض (من بيانات الحساب — Google بيعبيه تلقائي، وحساب الإيميل بياخذه من نموذج التسجيل) */
-function getCustomerFullName(user) {
-  if (!user) return "";
-  return user.name || "";
+function getCustomerFullName(session) {
+  if (!session || !session.user) return "";
+  return session.user.user_metadata?.full_name || session.user.user_metadata?.name || "";
 }
 
 async function refreshAccountModalView() {
   try {
-    customerSession = await awAccount.get();
-  } catch (e) {
-    customerSession = null;
-  }
-  updateAccountButtonAvatar(customerSession);
+    const response = await fetch(
+      `${APPWRITE_ENDPOINT}/account`,
+      {
+        method: "GET",
+        credentials: "include",
+        headers: {
+          "Accept": "application/json",
+          "X-Appwrite-Project": APPWRITE_PROJECT_ID
+        }
+      }
+    );
 
-  if (customerSession) {
+    const userData =
+      await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      window.appwriteCustomerSession = null;
+
+      document.getElementById("authForms").style.display = "block";
+      document.getElementById("accountLoggedIn").style.display = "none";
+
+      return;
+    }
+
+    window.appwriteCustomerSession = {
+      user: userData
+    };
+
     document.getElementById("authForms").style.display = "none";
     document.getElementById("accountLoggedIn").style.display = "block";
 
-    const fullName = getCustomerFullName(customerSession);
-    document.getElementById("accWelcomeText").textContent = "👋 أهلاً " + (fullName || customerSession.email || "");
+    const fullName =
+      userData.name ||
+      userData.prefs?.full_name ||
+      userData.email ||
+      "";
 
-    loadMyOrders();
-    // إذا كانت النافذة انفتحت إجبارياً لإتمام طلب، كمّل الإرسال تلقائياً بعد تسجيل الدخول
-    completePendingCheckoutIfAny();
-  } else {
+    const welcomeEl =
+      document.getElementById("accWelcomeText");
+
+    if (welcomeEl) {
+      welcomeEl.textContent =
+        "👋 أهلاً " + fullName;
+    }
+
+    const avatarUrl =
+      userData.prefs?.avatar_url ||
+      "";
+
+    const accountAvatarImg =
+      document.getElementById("accountAvatarImg");
+
+    const accountBtn =
+      document.getElementById("accountBtn");
+
+    if (accountAvatarImg && accountBtn && avatarUrl) {
+      accountAvatarImg.src = avatarUrl;
+      accountBtn.classList.add("has-avatar");
+    } else if (accountAvatarImg && accountBtn) {
+      accountAvatarImg.removeAttribute("src");
+      accountBtn.classList.remove("has-avatar");
+    }
+
+    const ordersList =
+      document.getElementById("accOrdersList");
+
+    if (ordersList) {
+      ordersList.innerHTML =
+        `<div class="acc-empty">سيتم نقل الطلبات إلى Appwrite لاحقًا</div>`;
+    }
+
+  } catch (error) {
+    console.error(
+      "APPWRITE ACCOUNT ERROR:",
+      error
+    );
+
+    window.appwriteCustomerSession = null;
+
     document.getElementById("authForms").style.display = "block";
     document.getElementById("accountLoggedIn").style.display = "none";
   }
 }
 
 async function handleCustomerSignup() {
-  const name = document.getElementById("custSignupName").value.trim();
-  const email = document.getElementById("custSignupEmail").value.trim();
-  const password = document.getElementById("custSignupPassword").value;
-  const errEl = document.getElementById("accountError");
+  const name = document
+    .getElementById("custSignupName")
+    .value
+    .trim();
+
+  const email = document
+    .getElementById("custSignupEmail")
+    .value
+    .trim();
+
+  const password = document
+    .getElementById("custSignupPassword")
+    .value;
+
+  const errEl =
+    document.getElementById("accountError");
+
   errEl.style.color = "";
   errEl.textContent = "";
 
-  if (!name || !email || !password) { errEl.textContent = "عبّي كل الحقول"; return; }
-  if (password.length < 6) { errEl.textContent = "كلمة السر لازم ٦ أحرف على الأقل"; return; }
-
-  try {
-    await awAccount.create({ userId: AppwriteID.unique(), email, password, name });
-    await awAccount.createEmailPasswordSession({ email, password });
-  } catch (error) {
-    errEl.textContent = "صار خطأ: " + (error.message || error);
+  if (!name || !email || !password) {
+    errEl.textContent = "عبّي كل الحقول";
     return;
   }
 
-  refreshAccountModalView();
+  if (password.length < 6) {
+    errEl.textContent =
+      "كلمة السر لازم ٦ أحرف على الأقل";
+    return;
+  }
+
+  try {
+    /* ================= إنشاء الحساب في Appwrite ================= */
+
+    const userId =
+      "user_" +
+      Date.now() +
+      "_" +
+      Math.random()
+        .toString(36)
+        .slice(2, 10);
+
+    const createUserResponse =
+      await fetch(
+        `${APPWRITE_ENDPOINT}/account`,
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json",
+
+            "Accept":
+              "application/json",
+
+            "X-Appwrite-Project":
+              APPWRITE_PROJECT_ID
+          },
+
+          body: JSON.stringify({
+            userId: userId,
+            email: email,
+            password: password,
+            name: name
+          })
+        }
+      );
+
+    if (!createUserResponse.ok) {
+      const errorData =
+        await createUserResponse.json().catch(
+          () => ({})
+        );
+
+      throw new Error(
+        errorData.message ||
+        `فشل إنشاء الحساب (${createUserResponse.status})`
+      );
+    }
+
+    /* ================= تسجيل الدخول مباشرة ================= */
+
+    const loginResponse =
+      await fetch(
+        `${APPWRITE_ENDPOINT}/account/sessions/email`,
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json",
+
+            "Accept":
+              "application/json",
+
+            "X-Appwrite-Project":
+              APPWRITE_PROJECT_ID
+          },
+
+          body: JSON.stringify({
+            email: email,
+            password: password
+          })
+        }
+      );
+
+    if (!loginResponse.ok) {
+      const loginError =
+        await loginResponse.json().catch(
+          () => ({})
+        );
+
+      throw new Error(
+        loginError.message ||
+        "تم إنشاء الحساب لكن تعذّر تسجيل الدخول تلقائيًا"
+      );
+    }
+
+    const session =
+      await loginResponse.json();
+
+    /* حفظ بيانات حساب Appwrite */
+
+    window.appwriteCustomerSession =
+      session;
+
+    /* حفظ الاسم محليًا */
+
+    try {
+      localStorage.setItem(
+        "appwrite_customer_name",
+        name
+      );
+
+      localStorage.setItem(
+        "appwrite_customer_email",
+        email
+      );
+    } catch (e) {
+      console.warn(
+        "تعذر حفظ بيانات الحساب محليًا:",
+        e
+      );
+    }
+
+    errEl.style.color = "#1FAE7A";
+    errEl.textContent =
+      "✅ تم إنشاء الحساب وتسجيل الدخول بنجاح";
+
+    /* تحديث واجهة الحساب */
+
+    if (typeof refreshAccountModalView === "function") {
+      await refreshAccountModalView();
+    }
+
+  } catch (error) {
+
+    console.error(
+      "APPWRITE SIGNUP ERROR:",
+      error
+    );
+
+    const message =
+      error?.message ||
+      "صار خطأ أثناء إنشاء الحساب";
+
+    if (
+      message.toLowerCase().includes("already") ||
+      message.includes("مستخدم") ||
+      message.includes("email")
+    ) {
+      errEl.textContent =
+        "⚠️ هذا الإيميل مستخدم مسبقًا";
+    } else {
+      errEl.textContent =
+        "❌ " + message;
+    }
+  }
 }
 
 async function handleCustomerLogin() {
-  const email = document.getElementById("custLoginEmail").value.trim();
-  const password = document.getElementById("custLoginPassword").value;
-  const errEl = document.getElementById("accountError");
+  const email = document
+    .getElementById("custLoginEmail")
+    .value
+    .trim();
+
+  const password = document
+    .getElementById("custLoginPassword")
+    .value;
+
+  const errEl =
+    document.getElementById("accountError");
 
   errEl.style.color = "";
   errEl.textContent = "";
 
   if (!email || !password) {
-    errEl.textContent = "عبّي الإيميل وكلمة السر";
+    errEl.textContent =
+      "عبّي الإيميل وكلمة السر";
     return;
   }
 
-  let user;
   try {
-    await awAccount.createEmailPasswordSession({ email, password });
-    user = await awAccount.get();
+    /* ================= تسجيل الدخول في Appwrite ================= */
+
+    const response = await fetch(
+      `${APPWRITE_ENDPOINT}/account/sessions/email`,
+      {
+        method: "POST",
+        credentials: "include",
+
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "X-Appwrite-Project":
+            APPWRITE_PROJECT_ID
+        },
+
+        body: JSON.stringify({
+          email: email,
+          password: password
+        })
+      }
+    );
+
+    const result =
+      await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(
+        result.message ||
+        "الإيميل أو كلمة السر غير صحيحة"
+      );
+    }
+
+    /* ================= جلب بيانات المستخدم من Appwrite ================= */
+
+    const userResponse = await fetch(
+      `${APPWRITE_ENDPOINT}/account`,
+      {
+        method: "GET",
+        credentials: "include",
+
+        headers: {
+          "Accept": "application/json",
+          "X-Appwrite-Project":
+            APPWRITE_PROJECT_ID
+        }
+      }
+    );
+
+    const userData =
+      await userResponse.json().catch(() => ({}));
+
+    if (!userResponse.ok) {
+      throw new Error(
+        userData.message ||
+        "تم تسجيل الدخول لكن تعذر جلب بيانات الحساب"
+      );
+    }
+
+    /* ================= حفظ جلسة Appwrite ================= */
+
+    window.appwriteCustomerSession = {
+      user: userData,
+      session: result
+    };
+
+    /* ================= تحديث واجهة الحساب ================= */
+
+    document.getElementById(
+      "authForms"
+    ).style.display = "none";
+
+    document.getElementById(
+      "accountLoggedIn"
+    ).style.display = "block";
+
+    const welcomeEl =
+      document.getElementById(
+        "accWelcomeText"
+      );
+
+    if (welcomeEl) {
+      const fullName =
+        userData.name ||
+        userData.prefs?.full_name ||
+        userData.email ||
+        "";
+
+      welcomeEl.textContent =
+        "👋 أهلاً " + fullName;
+    }
+
+    /* ================= تنظيف الحقول ================= */
+
+    document.getElementById(
+      "custLoginPassword"
+    ).value = "";
+
+    errEl.style.color = "#1FAE7A";
+    errEl.textContent =
+      "✅ تم تسجيل الدخول بنجاح";
+
   } catch (error) {
-    errEl.textContent = "الإيميل أو كلمة السر غير صحيحة";
-    return;
-  }
 
-  // تسجيل الإيميل في سجل الاستخدام
-  try {
-    await awTablesDB.createRow({
-      databaseId: APPWRITE_DATABASE_ID,
-      tableId: APPWRITE_EMAIL_LOGS_TABLE_ID,
-      rowId: AppwriteID.unique(),
-      data: { email, user_id: user?.$id || null, action: "login" },
-    });
-  } catch (e) {
-    console.warn("تعذّر تسجيل الإيميل:", e);
-  }
+    console.error(
+      "APPWRITE LOGIN ERROR:",
+      error
+    );
 
-  refreshAccountModalView();
+    errEl.style.color = "";
+    errEl.textContent =
+      "❌ " +
+      (error?.message ||
+        "الإيميل أو كلمة السر غير صحيحة");
+  }
 }
 
-/* تسجيل الدخول / إنشاء حساب تلقائي عبر Google (نفس الزر يخدم الحالتين) */
+/* ============ التسجيل / الدخول عبر Google ============ */
 async function handleGoogleAuth() {
-  const errEl = document.getElementById("accountError");
-  if (errEl) { errEl.style.color = ""; errEl.textContent = ""; }
+  const successUrl =
+    window.location.origin +
+    window.location.pathname;
 
-  // نحفظ إشارة إنه في طلب معلّق، لأنه تسجيل الدخول عبر Google بيعمل تحويل كامل لخارج الصفحة ورجوع منها
-  if (accountModalContext === "checkout") {
-    try { localStorage.setItem(PENDING_CHECKOUT_KEY, "1"); } catch (e) {}
-  }
-  saveCartToStorage();
+  const failureUrl = successUrl;
 
-  const redirectUrl = window.location.href.split("#")[0].split("?")[0];
+  const googleUrl =
+    `${APPWRITE_ENDPOINT}/account/sessions/oauth2/google` +
+    `?project=${encodeURIComponent(APPWRITE_PROJECT_ID)}` +
+    `&success=${encodeURIComponent(successUrl)}` +
+    `&failure=${encodeURIComponent(failureUrl)}`;
 
-  try {
-    awAccount.createOAuth2Session({ provider: Appwrite.OAuthProvider.Google, success: redirectUrl, failure: redirectUrl });
-  } catch (error) {
-    if (errEl) errEl.textContent = "تعذّر تسجيل الدخول عبر Google، حاول لاحقاً";
-  }
+  window.location.href = googleUrl;
 }
 
 /* إرسال رابط إعادة تعيين كلمة السر على الإيميل */
@@ -1124,111 +1535,301 @@ async function handleForgotPassword() {
     return;
   }
 
-  const redirectUrl = window.location.href.split("#")[0].split("?")[0];
+  async function handleForgotPassword() {
+    const errEl =
+      document.getElementById("accountError");
 
-  try {
-    await awAccount.createRecovery({ email, url: redirectUrl });
-  } catch (error) {
-    errEl.textContent = "صار خطأ، جرّب مرة ثانية";
-    return;
-  }
-  errEl.style.color = "#1FAE7A";
-  errEl.textContent = "تم إرسال رابط تغيير كلمة السر لإيميلك ✅";
-}
+    const email =
+      document
+        .getElementById("custLoginEmail")
+        .value
+        .trim();
 
-/* يكمّل عملية استعادة كلمة السر إذا رجع المستخدم من رابط الإيميل
-   (Appwrite بيضيف userId و secret تلقائياً كـ query params بالرابط) */
-async function completePasswordRecoveryIfAny() {
-  const params = new URLSearchParams(window.location.search);
-  const userId = params.get("userId");
-  const secret = params.get("secret");
-  if (!userId || !secret) return;
+    errEl.style.color = "";
+    errEl.textContent = "";
 
-  const newPassword = prompt("اكتب كلمة السر الجديدة (٦ أحرف على الأقل):");
+    if (!email) {
+      errEl.textContent =
+        "اكتب إيميلك بالأول حتى نرسلّك رابط تغيير كلمة السر";
+      return;
+    }
 
-  // ننضف الـ userId/secret من الرابط بكل الحالات حتى ما تتكرر العملية لو حدّث الصفحة
-  const cleanUrl = new URL(window.location.href);
-  cleanUrl.searchParams.delete("userId");
-  cleanUrl.searchParams.delete("secret");
-  window.history.replaceState({}, "", cleanUrl.toString());
+    try {
+      const recoveryUrl =
+        window.location.origin +
+        window.location.pathname;
 
-  if (!newPassword || newPassword.length < 6) return;
+      const response = await fetch(
+        `${APPWRITE_ENDPOINT}/account/recovery`,
+        {
+          method: "POST",
 
-  try {
-    await awAccount.updateRecovery({ userId, secret, password: newPassword });
-    alert("✅ تم تغيير كلمة السر، سجّلي دخول من جديد");
-  } catch (error) {
-    alert("❌ تعذّر تغيير كلمة السر، الرابط منتهي الصلاحية جرّبي ترسلي رابط جديد");
-  }
-}
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "X-Appwrite-Project":
+              APPWRITE_PROJECT_ID
+          },
 
-async function handleCustomerLogout() {
-  try { await awAccount.deleteSession({ sessionId: "current" }); } catch (e) {}
-  customerSession = null;
-  refreshAccountModalView();
-}
+          body: JSON.stringify({
+            email: email,
+            url: recoveryUrl
+          })
+        }
+      );
 
-/* ينتظر تحميل قائمة المنتجات (لازمة لتجهيز نص رسالة الفاتورة) */
-async function waitForProducts(timeoutMs) {
-  const limit = timeoutMs || 8000;
-  const start = Date.now();
-  while ((!products || !products.length) && Date.now() - start < limit) {
-    await new Promise(r => setTimeout(r, 150));
-  }
-}
+      const result =
+        await response.json().catch(() => ({}));
 
-/* إذا كان في طلب فاتورة معلّق بانتظار تسجيل الدخول (مثلاً بعد الرجوع من Google)، نكمّل إرساله تلقائياً */
-async function completePendingCheckoutIfAny() {
-  let pending;
-  try { pending = localStorage.getItem(PENDING_CHECKOUT_KEY); } catch (e) { pending = null; }
-  if (!pending || !customerSession) return;
+      if (!response.ok) {
+        throw new Error(
+          result.message ||
+          "تعذر إرسال رابط تغيير كلمة السر"
+        );
+      }
 
-  try { localStorage.removeItem(PENDING_CHECKOUT_KEY); } catch (e) {}
-  accountModalContext = null;
+      errEl.style.color = "#1FAE7A";
+      errEl.textContent =
+        "تم إرسال رابط تغيير كلمة السر لإيميلك ✅";
 
-  await waitForProducts();
-  if (!cart.length) return;
+    } catch (error) {
 
-  closeAccountModal();
-  await sendWhatsAppOrder();
-}
+      console.error(
+        "APPWRITE PASSWORD RECOVERY ERROR:",
+        error
+      );
 
-async function loadMyOrders() {
-  const listEl = document.getElementById("accOrdersList");
-  listEl.innerHTML = `<div class="acc-empty">جاري التحميل...</div>`;
-
-  if (!customerSession) {
-    listEl.innerHTML = `<div class="acc-empty">ما عندك طلبات سابقة بعد</div>`;
-    return;
+      errEl.style.color = "";
+      errEl.textContent =
+        "❌ تعذر إرسال رابط تغيير كلمة السر، جرّب مرة ثانية";
+    }
   }
 
-  let rows = [];
-  try {
-    const res = await awTablesDB.listRows({
-      databaseId: APPWRITE_DATABASE_ID,
-      tableId: APPWRITE_ORDERS_TABLE_ID,
-      queries: [
-        AppwriteQuery.equal("customer_id", customerSession.$id),
-        AppwriteQuery.orderDesc("$createdAt"),
-      ],
-    });
-    rows = res.rows || res.documents || [];
-  } catch (e) {
-    rows = [];
+  async function handleCustomerLogout() {
+    try {
+      const response = await fetch(
+        `${APPWRITE_ENDPOINT}/account/sessions/current`,
+        {
+          method: "DELETE",
+          credentials: "include",
+
+          headers: {
+            "Accept": "application/json",
+            "X-Appwrite-Project": APPWRITE_PROJECT_ID
+          }
+        }
+      );
+
+      if (!response.ok && response.status !== 401) {
+        const errorData =
+          await response.json().catch(() => ({}));
+
+        throw new Error(
+          errorData.message ||
+          "تعذر تسجيل الخروج"
+        );
+      }
+
+      // مسح جلسة Appwrite المحلية
+      window.appwriteCustomerSession = null;
+
+      // مسح بيانات الحساب المحفوظة محليًا
+      try {
+        localStorage.removeItem("appwrite_customer_name");
+        localStorage.removeItem("appwrite_customer_email");
+      } catch (e) {
+        console.warn(
+          "تعذر مسح بيانات الحساب المحلية:",
+          e
+        );
+      }
+
+      // تحديث نافذة الحساب
+      await refreshAccountModalView();
+
+    } catch (error) {
+
+      console.error(
+        "APPWRITE LOGOUT ERROR:",
+        error
+      );
+
+      const errEl =
+        document.getElementById("accountError");
+
+      if (errEl) {
+        errEl.textContent =
+          "❌ تعذر تسجيل الخروج، حاول مرة ثانية";
+      }
+    }
   }
 
-  if (!rows.length) {
-    listEl.innerHTML = `<div class="acc-empty">ما عندك طلبات سابقة بعد</div>`;
-    return;
+  /* ينتظر تحميل قائمة المنتجات (لازمة لتجهيز نص رسالة الفاتورة) */
+  async function waitForProducts(timeoutMs) {
+    const limit = timeoutMs || 8000;
+    const start = Date.now();
+    while ((!products || !products.length) && Date.now() - start < limit) {
+      await new Promise(r => setTimeout(r, 150));
+    }
   }
 
-  listEl.innerHTML = rows.map(o => {
-    const date = new Date(o.$createdAt).toLocaleDateString("ar-EG", { year: "numeric", month: "short", day: "numeric" });
-    const items = typeof o.items === "string" ? JSON.parse(o.items || "[]") : (o.items || []);
-    const itemsText = items.map(it => `${it.name} × ${it.qty}`).join("، ");
+  /* إذا كان في طلب فاتورة معلّق بانتظار تسجيل الدخول (مثلاً بعد الرجوع من Google)، نكمّل إرساله تلقائياً */
+  async function completePendingCheckoutIfAny() {
+    let pending;
+    try { pending = localStorage.getItem(PENDING_CHECKOUT_KEY); } catch (e) { pending = null; }
+    if (!pending || !customerSession) return;
+
+    try { localStorage.removeItem(PENDING_CHECKOUT_KEY); } catch (e) { }
+    accountModalContext = null;
+
+    await waitForProducts();
+    if (!cart.length) return;
+
+    closeAccountModal();
+    await sendWhatsAppOrder();
+  }
+
+  async function loadMyOrders() {
+    const listEl = document.getElementById("accOrdersList");
+
+    if (!listEl) return;
+
+    listEl.innerHTML =
+      `<div class="acc-empty">جاري التحميل...</div>`;
+
+    try {
+      /* الحصول على المستخدم الحالي من Appwrite */
+      const userResponse = await fetch(
+        `${APPWRITE_ENDPOINT}/account`,
+        {
+          method: "GET",
+          credentials: "include",
+          headers: {
+            "Accept": "application/json",
+            "X-Appwrite-Project": APPWRITE_PROJECT_ID
+          }
+        }
+      );
+
+      if (!userResponse.ok) {
+        listEl.innerHTML =
+          `<div class="acc-empty">سجّل دخولك أولاً</div>`;
+        return;
+      }
+
+      const user = await userResponse.json();
+
+      /* جلب الطلبات من Appwrite */
+      const ordersResponse = await fetch(
+        `${APPWRITE_ENDPOINT}/tablesdb/` +
+        `${APPWRITE_DATABASE_ID}/tables/orders/rows` +
+        `?limit=100`,
+        {
+          method: "GET",
+          credentials: "include",
+          headers: {
+            "Accept": "application/json",
+            "X-Appwrite-Project": APPWRITE_PROJECT_ID
+          }
+        }
+      );
+
+      const ordersData =
+        await ordersResponse.json().catch(() => ({}));
+
+      if (!ordersResponse.ok) {
+        throw new Error(
+          ordersData.message ||
+          "تعذر تحميل الطلبات"
+        );
+      }
+
+      const rows = ordersData.rows || [];
+
+      /* نعرض فقط طلبات المستخدم الحالي */
+      const myOrders = rows
+        .filter(o =>
+          o.data &&
+          String(o.data.customer_id || "") ===
+          String(user.$id || "")
+        )
+        .sort((a, b) =>
+          new Date(b.$createdAt) -
+          new Date(a.$createdAt)
+        );
+
+      if (!myOrders.length) {
+        listEl.innerHTML =
+          `<div class="acc-empty">ما عندك طلبات سابقة بعد</div>`;
+        return;
+      }
+
+      listEl.innerHTML = myOrders.map(o => {
+        const data = o.data || {};
+
+        const date = new Date(
+          o.$createdAt
+        ).toLocaleDateString("ar-EG", {
+          year: "numeric",
+          month: "short",
+          day: "numeric"
+        });
+
+        let items = data.items || [];
+
+        /* في حال كانت items محفوظة كنص JSON */
+        if (typeof items === "string") {
+          try {
+            items = JSON.parse(items);
+          } catch (e) {
+            items = [];
+          }
+        }
+
+        const itemsText = Array.isArray(items)
+          ? items.map(it => {
+            if (typeof it === "string") {
+              return it;
+            }
+
+            return `${it.name || ""} × ${it.qty || 1}`;
+          }).join("، ")
+          : "";
+
+        return `
+        <div class="acc-order-card">
+          <div class="acc-order-head">
+            <span>طلب #${o.$id}</span>
+            <span>${data.total || 0}${CURRENCY}</span>
+          </div>
+
+          <div class="acc-order-date">
+            ${date}
+          </div>
+
+          <div class="acc-order-items">
+            ${itemsText}
+          </div>
+        </div>
+      `;
+      }).join("");
+
+    } catch (error) {
+      console.error(
+        "APPWRITE LOAD ORDERS ERROR:",
+        error
+      );
+
+      listEl.innerHTML =
+        `<div class="acc-empty">تعذر تحميل الطلبات</div>`;
+    }
+  }
+  listEl.innerHTML = data.map(o => {
+    const date = new Date(o.created_at).toLocaleDateString("ar-EG", { year: "numeric", month: "short", day: "numeric" });
+    const itemsText = (o.items || []).map(it => `${it.name} × ${it.qty}`).join("، ");
     return `
       <div class="acc-order-card">
-        <div class="acc-order-head"><span>طلب #${o.$id}</span><span>${o.total}${CURRENCY}</span></div>
+        <div class="acc-order-head"><span>طلب #${o.id}</span><span>${o.total}${CURRENCY}</span></div>
         <div class="acc-order-date">${date}</div>
         <div class="acc-order-items">${itemsText}</div>
       </div>`;
@@ -1369,7 +1970,8 @@ function closeServiceModal() {
 }
 
 /* ============ إرسال الطلب عبر واتساب + حفظه كسجل فاتورة بقاعدة البيانات ============ */
-async function saveOrderRecord(items, total, customerName, customerEmail) {
+
+async function saveOrderRecord(items, total, customerName) {
   try {
     const orderItems = items.map(it => ({
       id: it.id,
@@ -1378,26 +1980,85 @@ async function saveOrderRecord(items, total, customerName, customerEmail) {
       price: it.price
     }));
 
-    const rowPermissions = customerSession
-      ? [AppwritePermission.read(AppwriteRole.user(customerSession.$id))]
-      : undefined; // طلب زائر بدون حساب: بدون صلاحيات صف مخصصة (بيضل قابل للقراءة فقط من صلاحيات الجدول العامة، متل فريق الأدمن)
+    let user = null;
 
-    await awTablesDB.createRow({
-      databaseId: APPWRITE_DATABASE_ID,
-      tableId: APPWRITE_ORDERS_TABLE_ID,
-      rowId: AppwriteID.unique(),
-      data: {
-        customer_id: customerSession ? customerSession.$id : null,
-        customer_name: customerName || (customerSession ? customerSession.name : null),
-        customer_email: customerEmail || (customerSession ? customerSession.email : null),
-        country: selectedCountry,
-        items: JSON.stringify(orderItems),
-        total: total
-      },
-      permissions: rowPermissions,
-    });
+    try {
+      const userResponse = await fetch(
+        `${APPWRITE_ENDPOINT}/account`,
+        {
+          method: "GET",
+          credentials: "include",
+          headers: {
+            "Accept": "application/json",
+            "X-Appwrite-Project": APPWRITE_PROJECT_ID
+          }
+        }
+      );
+
+      if (userResponse.ok) {
+        user = await userResponse.json();
+      }
+    } catch (e) {
+      console.warn(
+        "تعذر جلب مستخدم Appwrite:",
+        e
+      );
+    }
+
+    const customerId = user?.$id || null;
+
+    const finalCustomerName =
+      customerName ||
+      user?.name ||
+      null;
+
+    const finalItems = Array.isArray(orderItems)
+      ? orderItems.map(item => JSON.stringify(item))
+      : [];
+
+    const response = await fetch(
+      `${APPWRITE_ENDPOINT}/tablesdb/` +
+      `${APPWRITE_DATABASE_ID}/tables/orders/rows`,
+      {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "X-Appwrite-Project": APPWRITE_PROJECT_ID
+        },
+        body: JSON.stringify({
+          rowId: crypto.randomUUID(),
+          data: {
+            customer_id: customerId,
+            customer_name: finalCustomerName,
+            items: finalItems,
+            total: String(total)
+          }
+        })
+      }
+    );
+
+    const result =
+      await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(
+        result.message ||
+        "تعذر حفظ الطلب في Appwrite"
+      );
+    }
+
+    console.log(
+      "تم حفظ الطلب في Appwrite ✅",
+      result
+    );
+
   } catch (e) {
-    console.warn("تعذّر حفظ سجل الطلب:", e);
+    console.warn(
+      "تعذر حفظ سجل الطلب في Appwrite:",
+      e
+    );
   }
 }
 
@@ -1408,15 +2069,48 @@ async function sendWhatsAppOrder() {
     return;
   }
 
-  // نتأكد من حالة تسجيل الدخول الفعلية (لو موجودة) — بس ما عاد نجبر تسجيل دخول لإتمام الطلب،
-  // الزبون فيه يكمل كـ"زائر" لحد ما ينحل موضوع الحسابات بشكل نهائي بالموقع
+  // نتأكد من حالة تسجيل الدخول الفعلية من Appwrite قبل إرسال الطلب
+
   try {
-    customerSession = await awAccount.get();
-  } catch (e) {
+    const response = await fetch(
+      `${APPWRITE_ENDPOINT}/account`,
+      {
+        method: "GET",
+        credentials: "include",
+        headers: {
+          "Accept": "application/json",
+          "X-Appwrite-Project": APPWRITE_PROJECT_ID
+        }
+      }
+    );
+
+    if (response.ok) {
+      const user = await response.json();
+
+      customerSession = {
+        user: user
+      };
+    } else {
+      customerSession = null;
+    }
+
+  } catch (error) {
+    console.warn(
+      "تعذر التحقق من جلسة Appwrite:",
+      error
+    );
+
     customerSession = null;
   }
 
-  const customerEmail = customerSession ? (customerSession.email || "") : "";
+  // لازم يكون الزبون مسجل دخول قبل إرسال الفاتورة، حتى يظهر اسمه وإيميله تلقائياً بالفاتورة
+  // ونقدر نحفظها بحسابه ليشوفها لاحقاً بـ"طلباتي السابقة"
+  if (!customerSession) {
+    saveCartToStorage(); // نحافظ على السلة قبل ما نفتح نافذة تسجيل الدخول
+    try { localStorage.setItem(PENDING_CHECKOUT_KEY, "1"); } catch (e) { }
+    openAccountModal("checkout");
+    return;
+  }
   const customerName = getCustomerFullName(customerSession);
 
   let total = 0;
@@ -1450,7 +2144,7 @@ async function sendWhatsAppOrder() {
   message += "يرجى تأكيد الطلب وإرسال العنوان لإتمام التوصيل 🙏";
 
   // حفظ الفاتورة مع الاسم والإيميل
-  await saveOrderRecord(orderedItems, total, customerName, customerEmail);
+  await saveOrderRecord(orderedItems, total, customerName);
 
   const url =
     `https://wa.me/${WHATSAPP_NUMBERS[selectedCountry]}?text=${encodeURIComponent(message)}`;
@@ -1465,7 +2159,6 @@ window.addEventListener("scroll", () => {
 
 /* ============ تهيئة أولية ============ */
 async function initApp() {
-  completePasswordRecoveryIfAny();
   logVisit();
   await loadProducts();
   buildShuffleRank();

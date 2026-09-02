@@ -609,74 +609,89 @@ async function loadProducts() {
       throw new Error("Appwrite لم يرجع أي منتجات");
     }
 
-    allProducts = rows.map(row => {
-      const data = row.data || {};
+allProducts = rows.map(row => {
+  let data = row.data || {};
 
-      return {
-        id:
-          data.product_id !== undefined &&
-            data.product_id !== null
-            ? Number(data.product_id)
-            : Number(data.id || row.$id),
+  // أحيانًا البيانات قد تصل كنص JSON
+  if (typeof data === "string") {
+    try {
+      data = JSON.parse(data);
+    } catch (e) {
+      data = {};
+    }
+  }
 
-        name: data.name || "",
+  const id =
+    data.product_id !== undefined && data.product_id !== null
+      ? Number(data.product_id)
+      : Number(data.id || row.$id);
 
-        cat:
-          data.category ||
-          data.cat ||
-          "",
+  // البحث عن نفس المنتج في النسخة الاحتياطية
+  const fallback = allProductsFallback.find(
+    p => Number(p.id) === Number(id)
+  );
 
-        sub:
-          data.subcategory ||
-          data.sub ||
-          "",
+  return {
+    id: id || fallback?.id || 0,
 
-        price:
-          Number(data.price || 0),
+    name:
+      data.name ||
+      fallback?.name ||
+      `منتج #${id}`,
 
-        oldPrice:
-          data.old_price !== undefined &&
-            data.old_price !== null
-            ? Number(data.old_price)
-            : undefined,
+    cat:
+      data.category ||
+      data.cat ||
+      fallback?.cat ||
+      "",
 
-        color:
-          data.color ||
-          undefined,
-        img:
-          data.image ||
-          data.img ||
-          allProductsFallback.find(
-            x => Number(x.id) === Number(
-              data.product_id !== undefined &&
-                data.product_id !== null
-                ? data.product_id
-                : data.id || row.$id
-            )
-          )?.img ||
-          "",
+    sub:
+      data.subcategory ||
+      data.sub ||
+      fallback?.sub ||
+      "",
 
-        badge:
-          data.badge === "جديد" &&
-            data.new_until &&
-            new Date(data.new_until) > new Date()
-            ? "جديد"
-            : data.badge === "جديد"
-              ? undefined
-              : (data.badge || undefined),
+    price:
+      data.price !== undefined &&
+      data.price !== null &&
+      data.price !== ""
+        ? Number(data.price)
+        : Number(fallback?.price || 0),
 
-        newUntil:
-          data.new_until ||
-          null,
+    oldPrice:
+      data.old_price !== undefined &&
+      data.old_price !== null &&
+      data.old_price !== ""
+        ? Number(data.old_price)
+        : fallback?.oldPrice,
 
-        sale:
-          !!data.sale
-      };
-    });
+    color:
+      data.color ||
+      fallback?.color ||
+      undefined,
 
-    console.log(
-      `✅ Appwrite: تم تحميل ${allProducts.length} منتج`
-    );
+    img:
+      data.image ||
+      data.img ||
+      fallback?.img ||
+      "",
+
+    badge:
+      data.badge ||
+      fallback?.badge ||
+      undefined,
+
+    newUntil:
+      data.new_until ||
+      fallback?.newUntil ||
+      null,
+
+    sale:
+      data.sale !== undefined
+        ? !!data.sale
+        : !!fallback?.sale
+  };
+});
 
   } catch (e) {
     console.warn(

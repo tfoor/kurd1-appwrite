@@ -277,44 +277,23 @@ const PENDING_CHECKOUT_KEY = "boutique_pending_checkout";
 
 async function syncAppwriteSession() {
   try {
-    const response = await fetch(
-      `${APPWRITE_ENDPOINT}/account`,
-      {
-        method: "GET",
-        credentials: "include",
-        headers: {
-          "Accept": "application/json",
-          "X-Appwrite-Project": APPWRITE_PROJECT_ID
-        }
-      }
-    );
+    const user = await account.get();
 
-    if (response.ok) {
-      const user = await response.json();
+    customerSession = {
+      user: user
+    };
 
-      customerSession = {
-        user: user
-      };
+    updateAccountButtonAvatar(customerSession);
 
-      updateAccountButtonAvatar(customerSession);
-
-      return customerSession;
-    }
-
-    customerSession = null;
-    updateAccountButtonAvatar(null);
+    return customerSession;
 
   } catch (error) {
-    console.warn(
-      "APPWRITE SESSION ERROR:",
-      error
-    );
-
+    // عدم وجود جلسة تسجيل دخول = حالة طبيعية
     customerSession = null;
     updateAccountButtonAvatar(null);
-  }
 
-  return null;
+    return null;
+  }
 }
 
 /* فحص الجلسة عند فتح الموقع */
@@ -686,11 +665,17 @@ async function loadProducts() {
     allProducts = allProductsFallback;
   }
 
-  products = allProducts.filter(
-    p =>
-      !HIDDEN_CATEGORIES.includes(p.cat) &&
-      !HIDDEN_PRODUCT_IDS.includes(p.id)
-  );
+products = allProducts.filter(
+  p =>
+    p &&
+    p.name &&
+    p.cat &&
+    p.img &&
+    !HIDDEN_CATEGORIES.includes(p.cat) &&
+    !HIDDEN_PRODUCT_IDS.includes(p.id)
+);
+
+console.log("📦 منتجات المعرض:", products);
 }
 
 /* ============ تسجيل زيارة في Appwrite ============ */
@@ -1500,58 +1485,21 @@ async function handleCustomerLogin() {
   }
 }
 
-/* تسجيل الدخول عبر Google باستخدام Appwrite */
+/* ============ التسجيل / الدخول عبر Google ============ */
 async function handleGoogleAuth() {
-  const errEl =
-    document.getElementById("accountError");
+  const successUrl =
+    window.location.origin +
+    window.location.pathname;
 
-  if (errEl) {
-    errEl.style.color = "";
-    errEl.textContent = "";
-  }
+  const failureUrl = successUrl;
 
-  try {
-    if (typeof saveCartToStorage === "function") {
-      saveCartToStorage();
-    }
+  const googleUrl =
+    `${APPWRITE_ENDPOINT}/account/sessions/oauth2/google` +
+    `?project=${encodeURIComponent(APPWRITE_PROJECT_ID)}` +
+    `&success=${encodeURIComponent(successUrl)}` +
+    `&failure=${encodeURIComponent(failureUrl)}`;
 
-    if (
-      typeof accountModalContext !== "undefined" &&
-      accountModalContext === "checkout"
-    ) {
-      try {
-        localStorage.setItem(
-          PENDING_CHECKOUT_KEY,
-          "1"
-        );
-      } catch (e) {}
-    }
-
-    const successUrl =
-      window.location.origin +
-      window.location.pathname;
-
-    const failureUrl = successUrl;
-
-    const googleUrl =
-      `${APPWRITE_ENDPOINT}/account/sessions/oauth2/google` +
-      `?project=${encodeURIComponent(APPWRITE_PROJECT_ID)}` +
-      `&success=${encodeURIComponent(successUrl)}` +
-      `&failure=${encodeURIComponent(failureUrl)}`;
-
-    window.location.href = googleUrl;
-
-  } catch (error) {
-    console.error(
-      "APPWRITE GOOGLE AUTH ERROR:",
-      error
-    );
-
-    if (errEl) {
-      errEl.textContent =
-        "❌ تعذّر تسجيل الدخول عبر Google، حاول لاحقًا";
-    }
-  }
+  window.location.href = googleUrl;
 }
 
 /* إرسال رابط إعادة تعيين كلمة السر على الإيميل */

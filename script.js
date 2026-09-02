@@ -260,15 +260,30 @@ const APPWRITE_DATABASE_ID =
 const APPWRITE_TABLE_ID =
   "Products";
 /* ============ Appwrite Web SDK ============ */
+// ⚠️ مهم: إذا فشل تحميل مكتبة Appwrite (بسبب انقطاع إنترنت، حجب CDN، أو أدبلوكر)
+// فـ "Appwrite" ما تكون معرّفة، وأي كود يحاول يستخدمها مباشرة بدون try/catch
+// رح يوقف تنفيذ باقي الملف كامل (يعني حتى المنتجات الاحتياطية ما تظهر).
+// هالتغليف يمنع هالمشكلة: إذا فشل التحميل، الموقع يكمل شغل بالوضع الاحتياطي.
+let client = null;
+let account = null;
+let tablesDB = null;
 
-const client = new Appwrite.Client();
+try {
+  if (typeof Appwrite === "undefined") {
+    throw new Error("مكتبة Appwrite ما انحملت (تحقق من الاتصال بالإنترنت أو حاجب الإعلانات)");
+  }
 
-client
-  .setEndpoint(APPWRITE_ENDPOINT)
-  .setProject(APPWRITE_PROJECT_ID);
+  client = new Appwrite.Client();
 
-const account = new Appwrite.Account(client);
-const tablesDB = new Appwrite.TablesDB(client);
+  client
+    .setEndpoint(APPWRITE_ENDPOINT)
+    .setProject(APPWRITE_PROJECT_ID);
+
+  account = new Appwrite.Account(client);
+  tablesDB = new Appwrite.TablesDB(client);
+} catch (e) {
+  console.warn("⚠️ تعذّر تهيئة Appwrite، رح يشتغل الموقع بالمنتجات الاحتياطية فقط:", e);
+}
 /* مفتاح يحفظ إشارة إنه في طلب فاتورة معلّق بانتظار تسجيل الدخول (يستخدم خصوصاً
    مع تسجيل الدخول عبر Google، لأنه بيعمل تحويل كامل للصفحة ورجوع منها) */
 const PENDING_CHECKOUT_KEY = "boutique_pending_checkout";

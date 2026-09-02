@@ -928,39 +928,78 @@ function updateCartUI() {
   const totalEl = document.getElementById("cartTotal");
   const waBtn = document.getElementById("waBtn");
 
+  // حذف أي منتج قديم لم يعد موجودًا في Appwrite
+  cart = cart.filter(c =>
+    products.some(p => p && Number(p.id) === Number(c.id))
+  );
+
+  saveCartToStorage();
+
   const totalQty = cart.reduce((s, c) => s + c.qty, 0);
   countEl.textContent = totalQty;
 
   if (cart.length === 0) {
-    itemsEl.innerHTML = `<div class="cart-empty"><div>🛍️</div>${t("cart_empty")}</div>`;
+    itemsEl.innerHTML =
+      `<div class="cart-empty"><div>🛍️</div>${t("cart_empty")}</div>`;
+
     totalEl.textContent = `0${CURRENCY}`;
     waBtn.disabled = true;
     return;
   }
+
   waBtn.disabled = false;
+
   let total = 0;
+
   itemsEl.innerHTML = cart.map(c => {
-    const p = products.find(pr => pr.id === c.id);
-    const subtotal = p.price * c.qty;
+    const p = products.find(
+      pr => pr && Number(pr.id) === Number(c.id)
+    );
+
+    if (!p) return "";
+
+    const subtotal = Number(p.price || 0) * c.qty;
     total += subtotal;
+
     return `
       <div class="cart-item">
-        <img src="${p.img}" alt="${p.name}" ${p.fallback ? `onerror="this.onerror=null;this.src='${p.fallback}'"` : ""}>
+        <img
+          src="${p.img}"
+          alt="${p.name}"
+          ${p.fallback
+            ? `onerror="this.onerror=null;this.src='${p.fallback}'"`
+            : ""}
+        >
+
         <div class="ci-info">
-          <h4>${p.name} <span class="ci-id">#${p.id}</span></h4>
-          <span class="ci-price">${p.price}${CURRENCY} × ${c.qty} = ${subtotal}${CURRENCY}</span>
+          <h4>
+            ${p.name}
+            <span class="ci-id">#${p.id}</span>
+          </h4>
+
+          <span class="ci-price">
+            ${p.price}${CURRENCY} × ${c.qty} = ${subtotal}${CURRENCY}
+          </span>
+
           <div class="qty-row">
             <button class="qty-btn" onclick="changeQty(${p.id},-1)">−</button>
             <span>${c.qty}</span>
             <button class="qty-btn" onclick="changeQty(${p.id},1)">+</button>
           </div>
-          <button class="remove-btn" onclick="removeFromCart(${p.id})">${t("remove_btn")}</button>
+
+          <button
+            class="remove-btn"
+            onclick="removeFromCart(${p.id})"
+          >
+            ${t("remove_btn")}
+          </button>
         </div>
-      </div>`;
+      </div>
+    `;
   }).join("");
+
   totalEl.textContent = `${total}${CURRENCY}`;
 }
-
 /* ============ فتح / إغلاق صورة كاملة (Lightbox) ============ */
 function openLightbox(src, alt) {
   const lb = document.getElementById("imgLightbox");

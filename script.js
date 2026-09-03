@@ -738,6 +738,16 @@ console.log(
   "📁 منتجات احتياطية مضافة:",
   missingFallbackProducts.length
 );
+
+console.log("📦 إجمالي منتجات المعرض:", products.length);
+console.log(
+  "☁️ منتجات Appwrite:",
+  appwriteProducts.length
+);
+console.log(
+  "📁 منتجات احتياطية مضافة:",
+  missingFallbackProducts.length
+);
   console.log("📦 منتجات المعرض:", products);
 }
 

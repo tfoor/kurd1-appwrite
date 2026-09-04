@@ -877,6 +877,16 @@ function buildShuffleRank() {
 }
 
 const galleryEl = document.getElementById("gallery-grid");
+/* ============ الشارة المعروضة فعليًا على المنتج ============
+   أي منتج مضاف حديثًا يظهر عليه "جديد" تلقائيًا لمدة أسبوع من تاريخ إضافته
+   (new_until)، وبعد انتهاء الأسبوع ترجع الشارة العادية (إذا كانت موجودة) */
+function getDisplayBadge(p) {
+  if (p.newUntil && new Date(p.newUntil).getTime() > Date.now()) {
+    return "جديد";
+  }
+  return p.badge || "";
+}
+
 function renderGallery() {
   galleryEl.innerHTML = "";
   let list = activeCat === "الكل" ? [...products] : products.filter(p => p.cat === activeCat);
@@ -910,7 +920,7 @@ function renderGallery() {
       <div class="card-img">
         <img src="${p.img}" alt="${p.name}" ${p.fallback ? `onerror="this.onerror=null;this.src='${p.fallback}'"` : ""} onclick="openLightbox(this.src,'${p.name.replace(/'/g, "\\'")}')">
         <span class="product-id">#${p.id}</span>
-        ${p.badge ? `<span class="badge ${p.sale ? 'sale' : ''} ${p.best ? 'best' : ''}">${p.badge}</span>` : ""}
+        ${getDisplayBadge(p) ? `<span class="badge ${p.sale ? 'sale' : ''} ${p.best ? 'best' : ''}">${getDisplayBadge(p)}</span>` : ""}
       </div>
       <div class="card-body">
         <div class="card-cat">${t(catKeyMap[p.cat] || p.cat)}</div>
@@ -1153,7 +1163,7 @@ function openAccountModal(context) {
   if (subtitleEl) {
     if (accountModalContext === "checkout") {
       subtitleEl.style.display = "block";
-      subtitleEl.textContent = "🛍️ سجّل دخولك أو أنشئ حساب بثواني حتى نقدر نحفظ الفاتورة باسمك ونرسلها لك";
+      subtitleEl.textContent = "🛍️ سجّل دخولك أو أنشئ حساب بثواني حتى نقدر نحفظ الفاتورة باسمك ونرسلها لك، أو أكمل كزائر بدون تسجيل";
       if (titleEl) titleEl.textContent = "سجّل دخولك لإتمام الطلب";
     } else {
       subtitleEl.style.display = "none";
@@ -1162,8 +1172,27 @@ function openAccountModal(context) {
     }
   }
 
+  /* خيار "المتابعة كزائر" يظهر بس وقت إتمام الطلب (checkout)، مو بالفتح العادي */
+  const guestDivider = document.getElementById("guestDivider");
+  const guestBox = document.getElementById("guestCheckoutBox");
+  const showGuest = accountModalContext === "checkout";
+  if (guestDivider) guestDivider.style.display = showGuest ? "block" : "none";
+  if (guestBox) guestBox.style.display = showGuest ? "block" : "none";
+
   document.getElementById("accountModal").classList.add("show");
   refreshAccountModalView();
+}
+
+/* ============ المتابعة كزائر (بدون تسجيل حساب) ============ */
+async function continueAsGuest() {
+  const nameInput = document.getElementById("guestName");
+  const guestName = (nameInput && nameInput.value.trim()) || "زائر";
+
+  closeAccountModal();
+  await waitForProducts();
+  if (!cart.length) return;
+
+  await proceedWithOrder(guestName);
 }
 function closeAccountModal() {
   document.getElementById("accountModal").classList.remove("show");
@@ -1616,17 +1645,6 @@ async function handleGoogleAuth() {
 
 /* إرسال رابط إعادة تعيين كلمة السر على الإيميل */
 async function handleForgotPassword() {
-  const errEl = document.getElementById("accountError");
-  const email = document.getElementById("custLoginEmail").value.trim();
-  errEl.style.color = "";
-  errEl.textContent = "";
-
-  if (!email) {
-    errEl.textContent = "اكتب إيميلك بالأول حتى نرسلّك رابط تغيير كلمة السر";
-    return;
-  }
-
-  async function handleForgotPassword() {
     const errEl =
       document.getElementById("accountError");
 
@@ -1810,44 +1828,25 @@ async function handleForgotPassword() {
 
       const user = await userResponse.json();
 
-      /* جلب الطلبات من Appwrite */
-      const ordersResponse = await fetch(
-        `${APPWRITE_ENDPOINT}/tablesdb/` +
-        `${APPWRITE_DATABASE_ID}/tables/orders/rows` +
-        `?limit=100`,
-        {
-          method: "GET",
-          credentials: "include",
-          headers: {
-            "Accept": "application/json",
-            "X-Appwrite-Project": APPWRITE_PROJECT_ID
-          }
-        }
-      );
+      /* جلب طلبات المستخدم الحالي فقط — الفلترة تصير من السيرفر مباشرة
+         (Query.equal) بدل ما نجيب كل فواتير كل الزبائن ونخفي الباقي بالمتصفح،
+         حتى ما توصل فواتير غير زبائن لجهاز الزبون أصلًا */
+      const result = await tablesDB.listRows({
+        databaseId: APPWRITE_DATABASE_ID,
+        tableId: "orders",
+        queries: [
+          Appwrite.Query.equal("customer_id", user.$id),
+          Appwrite.Query.orderDesc("$createdAt"),
+          Appwrite.Query.limit(100)
+        ]
+      });
 
-      const ordersData =
-        await ordersResponse.json().catch(() => ({}));
+      const rows = Array.isArray(result.rows) ? result.rows : [];
 
-      if (!ordersResponse.ok) {
-        throw new Error(
-          ordersData.message ||
-          "تعذر تحميل الطلبات"
-        );
-      }
-
-      const rows = ordersData.rows || [];
-
-      /* نعرض فقط طلبات المستخدم الحالي */
-      const myOrders = rows
-        .filter(o =>
-          o.data &&
-          String(o.data.customer_id || "") ===
-          String(user.$id || "")
-        )
-        .sort((a, b) =>
-          new Date(b.$createdAt) -
-          new Date(a.$createdAt)
-        );
+      const myOrders = rows.map(row => ({
+        $createdAt: row.$createdAt,
+        data: row
+      }));
 
       if (!myOrders.length) {
         listEl.innerHTML =
@@ -1915,17 +1914,6 @@ async function handleForgotPassword() {
         `<div class="acc-empty">تعذر تحميل الطلبات</div>`;
     }
   }
-  listEl.innerHTML = data.map(o => {
-    const date = new Date(o.created_at).toLocaleDateString("ar-EG", { year: "numeric", month: "short", day: "numeric" });
-    const itemsText = (o.items || []).map(it => `${it.name} × ${it.qty}`).join("، ");
-    return `
-      <div class="acc-order-card">
-        <div class="acc-order-head"><span>طلب #${o.id}</span><span>${o.total}${CURRENCY}</span></div>
-        <div class="acc-order-date">${date}</div>
-        <div class="acc-order-items">${itemsText}</div>
-      </div>`;
-  }).join("");
-}
 
 /* ============ نافذة "تواصل معنا" (واتساب + انستغرام) ============ */
 function openContactModal() {
@@ -2194,16 +2182,22 @@ async function sendWhatsAppOrder() {
     customerSession = null;
   }
 
-  // لازم يكون الزبون مسجل دخول قبل إرسال الفاتورة، حتى يظهر اسمه وإيميله تلقائياً بالفاتورة
-  // ونقدر نحفظها بحسابه ليشوفها لاحقاً بـ"طلباتي السابقة"
+  // إذا الزبون مسجل دخول، نكمل مباشرة باسمه. إذا مو مسجل، نفتح نافذة الحساب
+  // وفيها خيارين: يسجل دخول / ينشئ حساب، أو "يتابع كزائر" بدون تسجيل (proceedWithOrder
+  // تنفتح من continueAsGuest بهاي الحالة)
   if (!customerSession) {
     saveCartToStorage(); // نحافظ على السلة قبل ما نفتح نافذة تسجيل الدخول
     try { localStorage.setItem(PENDING_CHECKOUT_KEY, "1"); } catch (e) { }
     openAccountModal("checkout");
     return;
   }
-  const customerName = getCustomerFullName(customerSession);
 
+  const customerName = getCustomerFullName(customerSession);
+  await proceedWithOrder(customerName);
+}
+
+/* ============ بناء رسالة الطلب وإرسالها + حفظ الفاتورة (يشتغل لزبون مسجّل أو زائر) ============ */
+async function proceedWithOrder(customerName) {
   let total = 0;
   let message = "🛍️ *طلب جديد من ستايل روج*\n\n";
   const orderedItems = [];

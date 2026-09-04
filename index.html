@@ -243,6 +243,16 @@
         </button>
       </div>
 
+      <!-- خيار "المتابعة كزائر" — يظهر بس وقت إتمام الطلب، بدون ما يجبر الزبون يسوي حساب -->
+      <div class="acc-divider" id="guestDivider" style="display:none;">أو</div>
+      <div id="guestCheckoutBox" style="display:none;">
+        <div class="acc-field">
+          <label>الاسم (اختياري)</label>
+          <input type="text" id="guestName" placeholder="اسمك">
+        </div>
+        <button type="button" class="acc-btn btn-ghost-acc" onclick="continueAsGuest()">🛍️ المتابعة كزائر بدون تسجيل</button>
+      </div>
+
       <div class="acc-error" id="accountError"></div>
     </div>
 

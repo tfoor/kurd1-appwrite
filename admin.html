@@ -1370,21 +1370,11 @@
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-
   <script>
-    const SUPABASE_URL =
-      "https://gzhgokztibcctmmljorf.supabase.co";
-
-    const SUPABASE_ANON_KEY =
-      "sb_publishable_7bfT9JW5Y7aMRR211n0GVA_Blfp1UDx";
-
-    const sb = supabase.createClient(
-      SUPABASE_URL,
-      SUPABASE_ANON_KEY
-    );
-
-    /* ============ Appwrite ============ */
+    /* ============ Appwrite ============
+       الموقع (index.html/script.js) ولوحة التحكم لازم يشتغلوا على نفس قاعدة
+       البيانات حتى تنعكس التعديلات على بعض. لوحة التحكم صارت تستخدم Appwrite
+       بالكامل (نفس المشروع/القاعدة اللي يستخدمها الموقع) بدل Supabase. */
 
     const APPWRITE_ENDPOINT =
       "https://fra.cloud.appwrite.io/v1";
@@ -1423,6 +1413,27 @@
     }
 
     /* ============ تسجيل الدخول / الخروج ============ */
+    /* ============ مساعد: طلب Appwrite REST جاهز ============ */
+    async function appwriteFetch(path, options = {}) {
+      const response = await fetch(`${APPWRITE_ENDPOINT}${path}`, {
+        credentials: "include",
+        ...options,
+        headers: {
+          Accept: "application/json",
+          "X-Appwrite-Project": APPWRITE_PROJECT_ID,
+          ...(options.headers || {})
+        }
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.message || `Appwrite HTTP ${response.status}`);
+      }
+
+      return data;
+    }
+
     async function handleLogin() {
       const email = document.getElementById("loginEmail").value.trim();
       const password = document.getElementById("loginPassword").value;
@@ -1439,22 +1450,42 @@
       btn.disabled = true;
       btn.textContent = "جاري الدخول...";
 
-      const { error } = await sb.auth.signInWithPassword({ email, password });
+      try {
+        await appwriteFetch("/account/sessions/email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password })
+        });
 
-      btn.disabled = false;
-      btn.textContent = "تسجيل الدخول";
+        /* لازم الحساب يكون معلّم بـ label اسمه "admin" من لوحة Appwrite
+           (Auth → Users → افتح المستخدم → Labels) حتى يقدر يدخل للوحة التحكم،
+           هذا يمنع أي زبون عادي من الدخول للوحة حتى لو خمّن رابطها */
+        const user = await appwriteFetch("/account");
 
-      if (error) {
-        errEl.textContent = "الإيميل أو كلمة السر غير صحيحة";
+        if (!Array.isArray(user.labels) || !user.labels.includes("admin")) {
+          await appwriteFetch("/account/sessions/current", { method: "DELETE" }).catch(() => {});
+          throw new Error("هذا الحساب ما عنده صلاحية الدخول للوحة التحكم");
+        }
+
+        showDashboard();
+
+      } catch (error) {
+        console.error("ADMIN LOGIN ERROR:", error);
+        errEl.textContent = error.message || "الإيميل أو كلمة السر غير صحيحة";
         errEl.style.display = "block";
-        return;
-      }
 
-      showDashboard();
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "تسجيل الدخول";
+      }
     }
 
     async function handleLogout() {
-      await sb.auth.signOut();
+      try {
+        await appwriteFetch("/account/sessions/current", { method: "DELETE" });
+      } catch (error) {
+        console.warn("ADMIN LOGOUT ERROR:", error);
+      }
       document.getElementById("dashboard").style.display = "none";
       document.getElementById("loginScreen").style.display = "flex";
       document.getElementById("loginPassword").value = "";
@@ -1604,13 +1635,31 @@
     }
 
     /* ============ بناء تبويبات الفئات (تلقائياً من المنتجات الموجودة) ============ */
-    function buildCatTabs() {
-      const cats = ["الكل", ...new Set(allProducts.map(p => p.cat).filter(Boolean))];
-      const tabsEl = document.getElementById("catTabs");
-      tabsEl.innerHTML = cats.map(cat => `
-    <button class="cat-tab ${cat === activeCat ? 'active' : ''}" onclick="selectCatTab('${cat.replace(/'/g, "\\'")}')">${cat}</button>
+function buildCatTabs() {
+  const cats = [
+    "الكل",
+    "رجالي",
+    "نسائي",
+    "أطفال",
+    "أحذية",
+    "إكسسوارات",
+    "مكياج",
+    "أدوات منزلية"
+  ];
+
+  const tabsEl = document.getElementById("catTabs");
+
+  tabsEl.innerHTML = cats.map(cat => `
+    <button
+      class="cat-tab ${cat === activeCat ? "active" : ""}"
+      onclick="selectCatTab('${cat.replace(/'/g, "\\'")}')"
+    >
+      ${cat}
+    </button>
   `).join("");
-    }
+}
+
+    /* ============ اختيار تبويب فئة معيّن بقائمة المنتجات ============ */
     function selectCatTab(cat) {
       activeCat = cat;
       buildCatTabs();
@@ -1618,10 +1667,37 @@
     }
 
     /* ============ جلب عدد الزيارات ============ */
-    async function loadVisitsCount() {
-      const { count, error } = await sb.from("visits").select("*", { count: "exact", head: true });
-      document.getElementById("visitsCount").textContent = error ? "—" : (count ?? 0);
+    /* ============ مساعد: جلب كل صفوف جدول Appwrite (مع تقسيم الصفحات) ============ */
+    async function fetchAllRows(tableId) {
+      const rows = [];
+      const limit = 100;
+      let offset = 0;
+
+      while (true) {
+        const result = await appwriteFetch(
+          `/tablesdb/${APPWRITE_DATABASE_ID}/tables/${tableId}/rows?limit=${limit}&offset=${offset}&total=false`
+        );
+
+        const batch = Array.isArray(result.rows) ? result.rows : [];
+        rows.push(...batch);
+
+        if (batch.length < limit) break;
+        offset += limit;
+      }
+
+      return rows;
     }
+
+    async function loadVisitsCount() {
+      try {
+        const rows = await fetchAllRows("visits");
+        document.getElementById("visitsCount").textContent = rows.length;
+      } catch (error) {
+        console.error("VISITS COUNT ERROR:", error);
+        document.getElementById("visitsCount").textContent = "—";
+      }
+    }
+
     async function loadVisitors() {
       const listEl = document.getElementById("visitorsList");
 
@@ -1630,13 +1706,11 @@
       listEl.innerHTML =
         `<div class="loading-state">جاري تحميل الزوار...</div>`;
 
-      const { data, error } = await sb
-        .from("visits")
-        .select("id, created_at, visitor_name, user_email, user_id")
-        .order("created_at", { ascending: false })
-        .limit(50);
+      let rows;
 
-      if (error) {
+      try {
+        rows = await fetchAllRows("visits");
+      } catch (error) {
         console.error("VISITORS ERROR:", error);
 
         listEl.innerHTML =
@@ -1645,24 +1719,27 @@
         return;
       }
 
-      if (!data || !data.length) {
+      if (!rows.length) {
         listEl.innerHTML =
           `<div class="empty-state">لا توجد زيارات بعد</div>`;
 
         return;
       }
 
+      const data = rows
+        .sort((a, b) => new Date(b.$createdAt) - new Date(a.$createdAt))
+        .slice(0, 50);
+
       listEl.innerHTML = data.map(v => {
         const name =
           v.visitor_name ||
-          v.user_email ||
-          `زائر #${v.id}`;
+          `زائر #${v.$id}`;
 
         const status = v.user_id
           ? "🟢 مسجل دخول"
           : "👤 زائر";
 
-        const date = new Date(v.created_at).toLocaleString(
+        const date = new Date(v.$createdAt).toLocaleString(
           "ar-IQ",
           {
             year: "numeric",
@@ -1687,13 +1764,6 @@
           <div style="font-weight:800;">
             👤 ${name}
           </div>
-
-          ${v.user_email
-            ? `<div style="font-size:12px;color:var(--ink-soft);">
-                   ${v.user_email}
-                 </div>`
-            : ""
-          }
         </div>
 
         <div style="
@@ -1711,10 +1781,15 @@
 
     /* ============ جلب عدد الطلبات ============ */
     async function loadOrdersCount() {
-      const { count, error } = await sb.from("orders").select("*", { count: "exact", head: true });
-      const val = error ? "—" : (count ?? 0);
-      document.getElementById("ordersCount").textContent = val;
-      document.getElementById("navOrdersCount").textContent = val;
+      try {
+        const rows = await fetchAllRows("orders");
+        document.getElementById("ordersCount").textContent = rows.length;
+        document.getElementById("navOrdersCount").textContent = rows.length;
+      } catch (error) {
+        console.error("ORDERS COUNT ERROR:", error);
+        document.getElementById("ordersCount").textContent = "—";
+        document.getElementById("navOrdersCount").textContent = "—";
+      }
     }
 
     /* ============ عرض قائمة المنتجات مع فلترة الفئة والبحث ============ */
@@ -1753,6 +1828,20 @@
     }
 
     /* ============ حفظ تعديل منتج (اسم + سعر) ============ */
+    /* ============ مساعد: استخراج معرّف الملف من رابط صورة Appwrite ============ */
+    function extractAppwriteFileId(imgUrl) {
+      try {
+        const url = new URL(imgUrl);
+        const marker = "/files/";
+        const start = url.pathname.indexOf(marker);
+        if (start === -1) return null;
+        const rest = url.pathname.substring(start + marker.length);
+        return decodeURIComponent(rest.split("/")[0]);
+      } catch (e) {
+        return null;
+      }
+    }
+
     async function saveProduct(id) {
       const nameInput = document.getElementById(`name-${id}`);
       const priceInput = document.getElementById(`price-${id}`);
@@ -1768,24 +1857,33 @@
       btn.disabled = true;
       btn.textContent = "...";
 
-      const { error } = await sb.from("products").update({ name: newName, price: newPrice }).eq("id", id);
+      try {
+        await appwriteFetch(
+          `/tablesdb/${APPWRITE_DATABASE_ID}/tables/${APPWRITE_TABLE_ID}/rows/${id}`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ data: { name: newName, price: newPrice } })
+          }
+        );
 
-      btn.disabled = false;
+        const p = allProducts.find(pr => pr.id === id);
+        if (p) { p.name = newName; p.price = newPrice; }
 
-      if (error) {
+        btn.classList.add("saved");
+        btn.textContent = "تم ✓";
+        showToast("✅ تم حفظ التعديل");
+        setTimeout(() => { btn.classList.remove("saved"); btn.textContent = "حفظ"; }, 1500);
+
+      } catch (error) {
+        console.error("SAVE PRODUCT ERROR:", error);
         btn.textContent = "خطأ ✕";
-        showToast("⚠️ صار خطأ، جرّب مرة ثانية");
+        showToast("⚠️ صار خطأ، جرّب مرة ثانية: " + error.message);
         setTimeout(() => { btn.textContent = "حفظ"; }, 1500);
-        return;
+
+      } finally {
+        btn.disabled = false;
       }
-
-      const p = allProducts.find(pr => pr.id === id);
-      if (p) { p.name = newName; p.price = newPrice; }
-
-      btn.classList.add("saved");
-      btn.textContent = "تم ✓";
-      showToast("✅ تم حفظ التعديل");
-      setTimeout(() => { btn.classList.remove("saved"); btn.textContent = "حفظ"; }, 1500);
     }
 
     /* ============ حذف منتج (+ حذف صورته من Storage) ============ */
@@ -1800,36 +1898,32 @@
       const confirmed = confirm(`⚠️ هل أنت متأكد من حذف المنتج؟\n\n#${product.id} — ${product.name}`);
       if (!confirmed) return;
 
-      const { error: dbError } = await sb.from("products").delete().eq("id", id);
-
-      if (dbError) {
+      try {
+        await appwriteFetch(
+          `/tablesdb/${APPWRITE_DATABASE_ID}/tables/${APPWRITE_TABLE_ID}/rows/${id}`,
+          { method: "DELETE" }
+        );
+      } catch (dbError) {
         console.error("DB DELETE ERROR:", dbError);
         showToast("❌ فشل حذف المنتج: " + dbError.message);
         return;
       }
 
       if (product.img) {
-        try {
-          const url = new URL(product.img);
-          const marker = "/object/public/product-images/";
-          const index = url.pathname.indexOf(marker);
+        const fileId = extractAppwriteFileId(product.img);
 
-          if (index !== -1) {
-            const filePath = decodeURIComponent(url.pathname.substring(index + marker.length));
-            const { error: storageError } = await sb.storage.from("product-images").remove([filePath]);
-
-            if (storageError) {
-              console.error("STORAGE DELETE ERROR:", storageError);
-              showToast("⚠️ المنتج انحذف لكن الصورة بقيت");
-              return;
-            }
-          } else {
-            console.warn("⚠️ لم أستطع استخراج مسار الصورة:", product.img);
+        if (fileId) {
+          try {
+            await appwriteFetch(
+              `/storage/buckets/${APPWRITE_BUCKET_ID}/files/${fileId}`,
+              { method: "DELETE" }
+            );
+          } catch (storageError) {
+            console.error("STORAGE DELETE ERROR:", storageError);
+            showToast("⚠️ المنتج انحذف لكن الصورة بقيت");
           }
-        } catch (e) {
-          console.error("STORAGE ERROR:", e);
-          showToast("⚠️ المنتج انحذف لكن الصورة بقيت");
-          return;
+        } else {
+          console.warn("⚠️ لم أستطع استخراج معرّف الصورة:", product.img);
         }
       }
 
@@ -1973,12 +2067,12 @@
   const badge =
     document.getElementById("newBadge").value.trim() || null;
 
+  /* كل منتج جديد يظهر عليه "جديد" تلقائياً لمدة أسبوع كامل من تاريخ إضافته،
+     بغض النظر عن الشارة اليدوية المختارة (new_until مستقل عن badge) */
   const newUntil =
-    badge === "جديد"
-      ? new Date(
-          Date.now() + 7 * 24 * 60 * 60 * 1000
-        ).toISOString()
-      : null;
+    new Date(
+      Date.now() + 7 * 24 * 60 * 60 * 1000
+    ).toISOString();
 
   let imageFile =
     document.getElementById("newImgFile").files[0];
@@ -2033,6 +2127,7 @@
   btn.textContent = "جاري ضغط الصورة...";
 
   let uploadedFileId = null;
+  const processBox = document.getElementById("imageProcessStatus");
 
   try {
     /* ================= ضغط الصورة ================= */
@@ -2273,15 +2368,6 @@
     renderProductList();
     clearAddForm();
 
-    const processBox =
-      document.getElementById(
-        "imageProcessStatus"
-      );
-
-    if (processBox) {
-      processBox.style.display = "none";
-    }
-
     showToast(
       "✅ تم رفع الصورة وإضافة المنتج إلى Appwrite"
     );
@@ -2420,8 +2506,8 @@
       btn.disabled = true;
       btn.textContent = "جاري الحفظ...";
 
+      let newImageFileId = null;
       let newImageUrl = null;
-      let newImagePath = null;
 
       try {
         if (imageFile) {
@@ -2436,19 +2522,95 @@
           const compressedImage = await compressImageToWebP(imageFile);
 
           btn.textContent = "جاري رفع الصورة...";
-          newImagePath = `products/${newId}-${Date.now()}.webp`;
+          newImageFileId = `product-${newId}-${Date.now()}`;
 
-          const { error: uploadError } = await sb.storage
-            .from("product-images")
-            .upload(newImagePath, compressedImage, { cacheControl: "3600", upsert: false, contentType: "image/webp" });
+          const formData = new FormData();
+          formData.append("fileId", newImageFileId);
+          formData.append("file", compressedImage, `${newId}.webp`);
 
-          if (uploadError) throw uploadError;
+          const uploadResponse = await fetch(
+            `${APPWRITE_ENDPOINT}/storage/buckets/${APPWRITE_BUCKET_ID}/files`,
+            {
+              method: "POST",
+              headers: { "X-Appwrite-Project": APPWRITE_PROJECT_ID },
+              body: formData
+            }
+          );
 
-          const { data: publicUrlData } = sb.storage.from("product-images").getPublicUrl(newImagePath);
-          newImageUrl = publicUrlData.publicUrl;
+          if (!uploadResponse.ok) {
+            const errorText = await uploadResponse.text();
+            throw new Error(`فشل رفع الصورة HTTP ${uploadResponse.status}: ${errorText}`);
+          }
+
+          newImageUrl =
+            `${APPWRITE_ENDPOINT}/storage/buckets/${APPWRITE_BUCKET_ID}` +
+            `/files/${newImageFileId}/view?project=${encodeURIComponent(APPWRITE_PROJECT_ID)}`;
         }
 
-        const updateData = {
+        const existing = allProducts.find(p => Number(p.id) === oldId) || {};
+
+        const rowData = {
+          product_id: newId,
+          name,
+          category: cat,
+          subcategory: sub,
+          price,
+          old_price,
+          color,
+          badge,
+          /* new_until (شارة "جديد" التلقائية) تبقى متل ما هي — تاريخ الإضافة
+             الأصلي، التعديل ما يعيد ضبط عدّاد الأسبوع */
+          new_until: existing.new_until ?? null,
+          sale: old_price !== null && old_price > price
+        };
+
+        if (newImageUrl) rowData.image = newImageUrl;
+
+        btn.textContent = "جاري تحديث المنتج...";
+
+        if (newId === oldId) {
+          await appwriteFetch(
+            `/tablesdb/${APPWRITE_DATABASE_ID}/tables/${APPWRITE_TABLE_ID}/rows/${oldId}`,
+            {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ data: rowData })
+            }
+          );
+        } else {
+          /* رقم المنتج تغيّر: معرّف الصف بـ Appwrite ثابت وما ينتغيّر،
+             فلازم ننشئ صف جديد بالمعرف الجديد ثم نحذف الصف القديم */
+          await appwriteFetch(
+            `/tablesdb/${APPWRITE_DATABASE_ID}/tables/${APPWRITE_TABLE_ID}/rows`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ rowId: String(newId), data: rowData })
+            }
+          );
+
+          await appwriteFetch(
+            `/tablesdb/${APPWRITE_DATABASE_ID}/tables/${APPWRITE_TABLE_ID}/rows/${oldId}`,
+            { method: "DELETE" }
+          );
+        }
+
+        /* إذا استبدلنا الصورة، نحذف صورة المنتج القديمة من التخزين */
+        if (newImageUrl && existing.img) {
+          const oldFileId = extractAppwriteFileId(existing.img);
+          if (oldFileId) {
+            try {
+              await appwriteFetch(
+                `/storage/buckets/${APPWRITE_BUCKET_ID}/files/${oldFileId}`,
+                { method: "DELETE" }
+              );
+            } catch (e) {
+              console.warn("تعذر حذف الصورة القديمة:", e);
+            }
+          }
+        }
+
+        const updatedLocal = {
           id: newId,
           name,
           cat,
@@ -2457,23 +2619,14 @@
           old_price,
           color,
           badge,
-          new_until: badge === "جديد" ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() : null,
-          sale: old_price !== null && old_price > price
+          new_until: rowData.new_until,
+          sale: rowData.sale,
+          img: newImageUrl || existing.img
         };
 
-        if (newImageUrl) updateData.img = newImageUrl;
-
-        btn.textContent = "جاري تحديث المنتج...";
-
-        const { error } = await sb.from("products").update(updateData).eq("id", oldId);
-
-        if (error) {
-          if (newImagePath) await sb.storage.from("product-images").remove([newImagePath]);
-          throw error;
-        }
-
         const index = allProducts.findIndex(p => Number(p.id) === oldId);
-        if (index !== -1) allProducts[index] = { ...allProducts[index], ...updateData };
+        if (index !== -1) allProducts[index] = updatedLocal;
+        else allProducts.push(updatedLocal);
 
         buildCatTabs();
         renderProductList();
@@ -2482,6 +2635,18 @@
         showToast("✅ تم تعديل المنتج بالكامل");
       } catch (error) {
         console.error("EDIT PRODUCT ERROR:", error);
+
+        if (newImageFileId) {
+          try {
+            await appwriteFetch(
+              `/storage/buckets/${APPWRITE_BUCKET_ID}/files/${newImageFileId}`,
+              { method: "DELETE" }
+            );
+          } catch (e) {
+            console.warn("تعذر تنظيف الصورة بعد فشل التعديل:", e);
+          }
+        }
+
         showToast("❌ فشل تعديل المنتج: " + (error.message || "خطأ غير معروف"));
       } finally {
         btn.disabled = false;
@@ -2489,39 +2654,51 @@
       }
     }
 
-    /* ============ سجلات الطلبات (الفواتير) ============ */
+    /* ============ سجلات الطلبات (الفواتير) — كل الطلبات، هذا حساب أدمن ============ */
     async function loadOrders() {
       const listEl = document.getElementById("ordersList");
       listEl.innerHTML = `<div class="loading-state">جاري التحميل...</div>`;
 
-      const { data, error } = await sb.from("orders").select("*").order("created_at", { ascending: false });
-
-      if (error) {
-        listEl.innerHTML = `<div class="empty-state">صار خطأ بجلب الطلبات: ${error.message}<br>(تأكد إنك نفّذت migration_accounts_orders.sql وحطيت is_admin = true لحسابك)</div>`;
+      let rows;
+      try {
+        rows = await fetchAllRows("orders");
+      } catch (error) {
+        console.error("LOAD ORDERS ERROR:", error);
+        listEl.innerHTML = `<div class="empty-state">صار خطأ بجلب الطلبات: ${error.message}<br>(تأكد إن حساب الأدمن عنده صلاحية قراءة جدول orders بـ Appwrite)</div>`;
         return;
       }
 
-      if (!data || !data.length) {
+      if (!rows.length) {
         listEl.innerHTML = `<div class="empty-state">ما في طلبات مسجّلة بعد</div>`;
         return;
       }
+
+      const data = rows.sort((a, b) => new Date(b.$createdAt) - new Date(a.$createdAt));
 
       document.getElementById("ordersCount").textContent = data.length;
       document.getElementById("navOrdersCount").textContent = data.length;
 
       listEl.innerHTML = data.map(o => {
-        const date = new Date(o.created_at).toLocaleString("ar-EG", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
-        const items = o.items || [];
+        const date = new Date(o.$createdAt).toLocaleString("ar-EG", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+
+        let items = o.items || [];
+        if (!Array.isArray(items)) items = [];
+        items = items.map(it => {
+          if (typeof it === "string") {
+            try { return JSON.parse(it); } catch (e) { return null; }
+          }
+          return it;
+        }).filter(Boolean);
+
         return `
       <div class="order-card">
         <div class="order-head">
-          <span class="order-id">🧾 طلب #${o.id}</span>
-          <span class="order-total">${o.total}$</span>
+          <span class="order-id">🧾 طلب #${o.$id}</span>
+          <span class="order-total">${o.total || 0}$</span>
         </div>
         <div class="order-meta">
           <span>📅 ${date}</span>
           ${o.customer_name ? `<span>👤 ${o.customer_name}</span>` : ""}
-          ${o.country ? `<span>🌍 ${o.country === 'iq' ? 'العراق' : o.country === 'sy' ? 'سوريا' : o.country}</span>` : ""}
           ${o.customer_id ? `<span>✅ زبون مسجل</span>` : `<span>👤 زائر</span>`}
         </div>
         <div class="order-items">
@@ -2533,8 +2710,14 @@
 
     /* ============ التحقق من الجلسة عند فتح الصفحة ============ */
     (async function checkSession() {
-      const { data } = await sb.auth.getSession();
-      if (data && data.session) showDashboard();
+      try {
+        const user = await appwriteFetch("/account");
+        if (Array.isArray(user.labels) && user.labels.includes("admin")) {
+          showDashboard();
+        }
+      } catch (error) {
+        // ما في جلسة مسجلة، تبقى شاشة تسجيل الدخول ظاهرة
+      }
     })();
 
     document.getElementById("loginPassword").addEventListener("keydown", e => {

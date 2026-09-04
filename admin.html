@@ -1451,6 +1451,12 @@
       btn.textContent = "جاري الدخول...";
 
       try {
+        /* إذا كان بالمتصفح جلسة شغالة من قبل (مثلاً تسجيل دخول كزبون بالموقع
+           الرئيسي، لأنه نفس مشروع Appwrite) نمسحها أول قبل لا نسوي وحدة جديدة،
+           لأن Appwrite يرفض إنشاء جلسة فوق وحدة شغالة برسالة:
+           "Creation of a session is prohibited when a session is active" */
+        await appwriteFetch("/account/sessions/current", { method: "DELETE" }).catch(() => {});
+
         await appwriteFetch("/account/sessions/email", {
           method: "POST",
           headers: { "Content-Type": "application/json" },

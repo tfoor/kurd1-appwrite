@@ -331,7 +331,8 @@ function updateAccountButtonAvatar(session) {
   const btn = document.getElementById("accountBtn");
   const img = document.getElementById("accountAvatarImg");
   if (!btn || !img) return;
-  const avatarUrl = session?.user?.user_metadata?.avatar_url || session?.user?.user_metadata?.picture || "";
+  /* Appwrite يخزن بيانات Google (الصورة) داخل prefs، مو user_metadata (هذا كان من Supabase) */
+  const avatarUrl = session?.user?.prefs?.avatar_url || session?.user?.prefs?.picture || "";
   if (avatarUrl) {
     img.src = avatarUrl;
     btn.classList.add("has-avatar");
@@ -596,14 +597,28 @@ let products = [];
 
 async function loadProducts() {
   try {
-    const result = await tablesDB.listRows({
-      databaseId: APPWRITE_DATABASE_ID,
-      tableId: APPWRITE_TABLE_ID
-    });
+    /* Appwrite يرجع 25 صف فقط كحد أقصى إذا ما حددنا limit — لازم نجيبهم
+       على دفعات (pagination) حتى تظهر كل المنتجات مهما كان عددهم */
+    const rows = [];
+    const pageSize = 100;
+    let offset = 0;
 
-    const rows = Array.isArray(result.rows)
-      ? result.rows
-      : [];
+    while (true) {
+      const result = await tablesDB.listRows({
+        databaseId: APPWRITE_DATABASE_ID,
+        tableId: APPWRITE_TABLE_ID,
+        queries: [
+          Appwrite.Query.limit(pageSize),
+          Appwrite.Query.offset(offset)
+        ]
+      });
+
+      const batch = Array.isArray(result.rows) ? result.rows : [];
+      rows.push(...batch);
+
+      if (batch.length < pageSize) break;
+      offset += pageSize;
+    }
 
     if (!rows.length) {
       throw new Error("Appwrite لم يرجع أي منتجات");
@@ -1217,7 +1232,9 @@ function toggleAccPassword(inputId, btn) {
 /* اسم الزبون المعروض (من بيانات الحساب — Google بيعبيه تلقائي، وحساب الإيميل بياخذه من نموذج التسجيل) */
 function getCustomerFullName(session) {
   if (!session || !session.user) return "";
-  return session.user.user_metadata?.full_name || session.user.user_metadata?.name || "";
+  /* Appwrite يخزن الاسم مباشرة بحقل name (للحساب بالإيميل ولحساب Google كمان)،
+     مو داخل user_metadata (هذا كان من Supabase) */
+  return session.user.name || session.user.prefs?.full_name || "";
 }
 
 async function refreshAccountModalView() {

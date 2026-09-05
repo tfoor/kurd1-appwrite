@@ -625,9 +625,13 @@ async function loadProducts() {
     }
 
 allProducts = rows.map(row => {
-  let data = row.data || {};
+  /* Appwrite يرجّع خصائص الصف مباشرة على الصف نفسه (row.name, row.price...)
+     مو جوة كائن فرعي اسمه row.data — الكود القديم كان يدوّر على row.data
+     اللي مالها وجود أبداً، فكانت كل البيانات الحقيقية تنطنّش وترجع تلقائياً
+     للقائمة الاحتياطية القديمة (fallback) حتى لو المنتج انعدّل أو انضاف جديد */
+  let data = row;
 
-  // أحيانًا البيانات قد تصل كنص JSON
+  // أحيانًا البيانات قد تصل كنص JSON (حالة نادرة، احتياط فقط)
   if (typeof data === "string") {
     try {
       data = JSON.parse(data);

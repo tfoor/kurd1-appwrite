@@ -32,11 +32,11 @@ const translations = {
     hero_desc: "مئات القطع المختارة بعناية بأسعار تناسبك، وطلب سهل عبر واتساب بضغطة واحدة.",
     hero_cta1: "تسوّق الآن", hero_cta2: "شاهد العروض", hero_tag: "الأكثر طلباً 🔥",
     cat_men: "رجالي", cat_women: "نسائي", cat_girls: "بناتي", cat_acc: "إكسسوارات", cat_all: "الكل",
-    cat_kids: "أطفال", cat_shoes: "أحذية", cat_makeup: "مكياج", cat_home: "أدوات منزلية",
+    cat_kids: "أطفال", cat_shoes: "أحذية", cat_makeup: "مكياج", cat_home: "أدوات منزلية", cat_school: "مدرسة",
     sub_top: "ملابس علوية", sub_sets: "أطقم منسقة", sub_bottom: "ملابس سفلية", sub_denim: "ملابس دينيم",
     sub_dresses: "فساتين", sub_skirts: "تنانير", sub_girls: "بناتي", sub_boys: "أولادي",
     sub_sandals: "صنادل", sub_heels: "كعوب", sub_classic: "كلاسيك", sub_kidshoes: "أطفال",
-    sub_hair: "شعر مستعار", sub_bags: "جنط", sub_jewelry: "مجوهرات",
+    sub_hair: "شعر مستعار", sub_bags: "جنط", sub_jewelry: "مجوهرات", sub_pens: "أقلام", sub_notebooks: "دفاتر",
     sub_makeup: "مكياج", sub_nailcare: "عناية بالأظافر", sub_beautytools: "أدوات تجميل", sub_skincare: "عناية بالبشرة",
     sub_phoneacc: "إكسسوارات موبايل", sub_sunglasses: "نظارات", sub_watches: "ساعات", sub_socks: "جوارب", sub_hairacc: "إكسسوارات شعر",
     promo1_t: "خصم يصل إلى ٤٠٪", promo1_d: "على القطع المختارة هذا الأسبوع",
@@ -76,11 +76,11 @@ const translations = {
     hero_desc: "Hundreds of carefully picked pieces at prices that suit you, with easy ordering via WhatsApp in one tap.",
     hero_cta1: "Shop Now", hero_cta2: "View Deals", hero_tag: "Best Seller 🔥",
     cat_men: "Men", cat_women: "Women", cat_girls: "Girls", cat_acc: "Accessories", cat_all: "All",
-    cat_kids: "Kids", cat_shoes: "Shoes", cat_makeup: "Makeup", cat_home: "Home & Tools",
+    cat_kids: "Kids", cat_shoes: "Shoes", cat_makeup: "Makeup", cat_home: "Home & Tools", cat_school: "School",
     sub_top: "Tops", sub_sets: "Matching Sets", sub_bottom: "Bottoms", sub_denim: "Denim",
     sub_dresses: "Dresses", sub_skirts: "Skirts", sub_girls: "Girls", sub_boys: "Boys",
     sub_sandals: "Sandals", sub_heels: "Heels", sub_classic: "Classic", sub_kidshoes: "Kids",
-    sub_hair: "Wigs & Hair", sub_bags: "Bags", sub_jewelry: "Jewelry",
+    sub_hair: "Wigs & Hair", sub_bags: "Bags", sub_jewelry: "Jewelry", sub_pens: "Pens", sub_notebooks: "Notebooks",
     sub_makeup: "Makeup", sub_nailcare: "Nail Care", sub_beautytools: "Beauty Tools", sub_skincare: "Skincare",
     sub_phoneacc: "Phone Accessories", sub_sunglasses: "Sunglasses", sub_watches: "Watches", sub_socks: "Socks", sub_hairacc: "Hair Accessories",
     promo1_t: "Up to 40% off", promo1_d: "On selected pieces this week",
@@ -120,11 +120,11 @@ const translations = {
     hero_desc: "Bi sedan perçeyên bi baldarî hilbijartî bi rexneyên li gorî te, û siparîşkirin bi hêsanî bi rêya WhatsApp bi yek pêl.",
     hero_cta1: "Niha Bikire", hero_cta2: "Pêşkêşiyan Bibîne", hero_tag: "Herî Zêde Tê Xwestin 🔥",
     cat_men: "Mêr", cat_women: "Jin", cat_girls: "Keç", cat_acc: "Aksesûar", cat_all: "Hemû",
-    cat_kids: "Zarok", cat_shoes: "Sol", cat_makeup: "Make-up", cat_home: "Malzemeyên Malê",
+    cat_kids: "Zarok", cat_shoes: "Sol", cat_makeup: "Make-up", cat_home: "Malzemeyên Malê", cat_school: "Dibistan",
     sub_top: "Kincên Jorîn", sub_sets: "Setên Hevgirtî", sub_bottom: "Kincên Jêrîn", sub_denim: "Cins",
     sub_dresses: "Fistan", sub_skirts: "Îtek", sub_girls: "Keç", sub_boys: "Kur",
     sub_sandals: "Sandal", sub_heels: "Sole Bilind", sub_classic: "Klasîk", sub_kidshoes: "Zarok",
-    sub_hair: "Porê Çêkirî", sub_bags: "Çente", sub_jewelry: "Zêr û Zîv",
+    sub_hair: "Porê Çêkirî", sub_bags: "Çente", sub_jewelry: "Zêr û Zîv", sub_pens: "Pênûs", sub_notebooks: "Defter",
     sub_makeup: "Make-up", sub_nailcare: "Lênêrîna Neynûkan", sub_beautytools: "Amûrên Ciwanîyê", sub_skincare: "Lênêrîna Çermê",
     sub_phoneacc: "Aksesûarên Mobîlê", sub_sunglasses: "Berçavk", sub_watches: "Seet", sub_socks: "Gore", sub_hairacc: "Aksesûarên Porê",
     promo1_t: "Daşandin heta 40%", promo1_d: "Li ser perçeyên vê heftê hilbijartî",
@@ -164,11 +164,11 @@ const translations = {
     hero_desc: "Sana uygun fiyatlarla özenle seçilmiş yüzlerce parça, tek dokunuşla WhatsApp üzerinden kolay sipariş.",
     hero_cta1: "Şimdi Alışveriş Yap", hero_cta2: "Fırsatları Gör", hero_tag: "En Çok Satan 🔥",
     cat_men: "Erkek", cat_women: "Kadın", cat_girls: "Kız Çocuk", cat_acc: "Aksesuar", cat_all: "Tümü",
-    cat_kids: "Çocuk", cat_shoes: "Ayakkabı", cat_makeup: "Makyaj", cat_home: "Ev & Aletler",
+    cat_kids: "Çocuk", cat_shoes: "Ayakkabı", cat_makeup: "Makyaj", cat_home: "Ev & Aletler", cat_school: "Okul",
     sub_top: "Üst Giyim", sub_sets: "Takımlar", sub_bottom: "Alt Giyim", sub_denim: "Kot",
     sub_dresses: "Elbiseler", sub_skirts: "Etekler", sub_girls: "Kız Çocuk", sub_boys: "Erkek Çocuk",
     sub_sandals: "Sandalet", sub_heels: "Topuklu", sub_classic: "Klasik", sub_kidshoes: "Çocuk",
-    sub_hair: "Peruk & Saç", sub_bags: "Çantalar", sub_jewelry: "Takı",
+    sub_hair: "Peruk & Saç", sub_bags: "Çantalar", sub_jewelry: "Takı", sub_pens: "Kalemler", sub_notebooks: "Defterler",
     sub_makeup: "Makyaj", sub_nailcare: "Tırnak Bakımı", sub_beautytools: "Güzellik Aletleri", sub_skincare: "Cilt Bakımı",
     sub_phoneacc: "Telefon Aksesuarları", sub_sunglasses: "Güneş Gözlüğü", sub_watches: "Saatler", sub_socks: "Çoraplar", sub_hairacc: "Saç Aksesuarları",
     promo1_t: "%40'a varan indirim", promo1_d: "Bu hafta seçili parçalarda",
@@ -246,10 +246,37 @@ function toggleTheme() {
 }
 applyTheme(localStorage.getItem("boutique_theme") || "light");
 
+/* ============ إخفاء زر "المتابعة عبر Google" جوة تطبيق الجوال ============
+   جوجل يمنع تسجيل الدخول بحسابه من جوة أي WebView (تطبيق) لأسباب أمنية —
+   لما المستخدم يضغطه هناك بيفتح بمتصفح خارجي وتضيع الجلسة. بما إن تطبيق
+   الجوال يضيف علامة خاصة لهوية المتصفح (StyleRojApp)، نخفي الزر بس هناك،
+   ونخلي الزبون يستخدم الإيميل العادي (شغّال صح جوة التطبيق) */
+function isInsideMobileApp() {
+  return false;
+}
+
+
+document.addEventListener("DOMContentLoaded", () => {
+  if (isInsideMobileApp()) {
+    const divider = document.getElementById("googleDivider");
+    const row = document.getElementById("googleSocialRow");
+    if (divider) divider.style.display = "none";
+    if (row) row.style.display = "none";
+  }
+});
+
+/* ============ تصحيح مؤقت: يوري أي خطأ برمجي كرسالة منبثقة جوة التطبيق بس ============
+   هاي إضافة مؤقتة لتشخيص مشكلة "خيارات أخرى" — بعد ما نلقى السبب لازم تنشال */
+if (isInsideMobileApp()) {
+  window.addEventListener("error", (e) => {
+    alert("⚠️ خطأ برمجي:\n" + e.message + "\nبالسطر: " + e.lineno);
+  });
+}
+
 /* ============ Appwrite التجريبي ============ */
 
 const APPWRITE_ENDPOINT =
-  "https://fra.cloud.appwrite.io/v1";
+  "https://api.styleroj.com/v1";
 
 const APPWRITE_PROJECT_ID =
   "6a9321f3002b6c1004a9";
@@ -259,6 +286,11 @@ const APPWRITE_DATABASE_ID =
 
 const APPWRITE_TABLE_ID =
   "Products";
+
+/* Table ID الحقيقي لجدول orders — الاسم المعروض بالكونسول "orders"،
+   بس الـ ID الداخلي الفعلي مختلف (شوفه بصفحة الجدول جنب اسمه) */
+const APPWRITE_ORDERS_TABLE_ID =
+  "6a95b38700155bc15eb7";
 /* ============ Appwrite Web SDK ============ */
 // ⚠️ مهم: إذا فشل تحميل مكتبة Appwrite (بسبب انقطاع إنترنت، حجب CDN، أو أدبلوكر)
 // فـ "Appwrite" ما تكون معرّفة، وأي كود يحاول يستخدمها مباشرة بدون try/catch
@@ -287,6 +319,46 @@ try {
 /* مفتاح يحفظ إشارة إنه في طلب فاتورة معلّق بانتظار تسجيل الدخول (يستخدم خصوصاً
    مع تسجيل الدخول عبر Google، لأنه بيعمل تحويل كامل للصفحة ورجوع منها) */
 const PENDING_CHECKOUT_KEY = "boutique_pending_checkout";
+
+/* ============ آلية احتياطية للجلسة (Cookie Fallback) ============
+   بما إن موقعنا (github.io) ودومين Appwrite مختلفين، بعض المتصفحات (خصوصاً
+   Safari على آيفون، وبعض نسخ فايرفوكس/أندرويد) تحجب "كوكيز الطرف الثالث"
+   افتراضياً، فجلسة الدخول ما تنحفظ عندهم رغم إنها تنجح بالبداية. Appwrite
+   يوفر حل احتياطي رسمي: يرجع هيدر X-Fallback-Cookies، نخزنه بـ localStorage
+   ونرسله بكل طلب جاي، وهيك الجلسة تضل شغالة حتى لو الكوكي العادي محجوب. */
+function getFallbackCookieHeader() {
+  try {
+    return localStorage.getItem("cookieFallback") || "";
+  } catch (e) {
+    return "";
+  }
+}
+
+function saveFallbackCookieFromResponse(response) {
+  try {
+    const value = response.headers.get("X-Fallback-Cookies");
+    if (value) localStorage.setItem("cookieFallback", value);
+  } catch (e) { }
+}
+
+/* طلب موحّد لكل نداءات Appwrite REST (account/...) — يضيف الهيدر الاحتياطي
+   تلقائياً ويحفظ أي هيدر جديد يرجع بالرد */
+async function appwriteAuthFetch(path, options = {}) {
+  const response = await fetch(`${APPWRITE_ENDPOINT}${path}`, {
+    credentials: "include",
+    ...options,
+    headers: {
+      Accept: "application/json",
+      "X-Appwrite-Project": APPWRITE_PROJECT_ID,
+      "X-Fallback-Cookies": getFallbackCookieHeader(),
+      ...(options.headers || {})
+    }
+  });
+
+  saveFallbackCookieFromResponse(response);
+
+  return response;
+}
 
 /* ============ مراقبة جلسة Appwrite ============ */
 
@@ -624,94 +696,127 @@ async function loadProducts() {
       throw new Error("Appwrite لم يرجع أي منتجات");
     }
 
-allProducts = rows.map(row => {
-  /* Appwrite يرجّع خصائص الصف مباشرة على الصف نفسه (row.name, row.price...)
-     مو جوة كائن فرعي اسمه row.data — الكود القديم كان يدوّر على row.data
-     اللي مالها وجود أبداً، فكانت كل البيانات الحقيقية تنطنّش وترجع تلقائياً
-     للقائمة الاحتياطية القديمة (fallback) حتى لو المنتج انعدّل أو انضاف جديد */
-  let data = row;
+    allProducts = rows.map(row => {
+      /* Appwrite يرجّع خصائص الصف مباشرة على الصف نفسه (row.name, row.price...)
+         مو جوة كائن فرعي اسمه row.data — الكود القديم كان يدوّر على row.data
+         اللي مالها وجود أبداً، فكانت كل البيانات الحقيقية تنطنّش وترجع تلقائياً
+         للقائمة الاحتياطية القديمة (fallback) حتى لو المنتج انعدّل أو انضاف جديد */
+      let data = row;
 
-  // أحيانًا البيانات قد تصل كنص JSON (حالة نادرة، احتياط فقط)
-  if (typeof data === "string") {
-    try {
-      data = JSON.parse(data);
-    } catch (e) {
-      data = {};
-    }
-  }
+      // أحيانًا البيانات قد تصل كنص JSON (حالة نادرة، احتياط فقط)
+      if (typeof data === "string") {
+        try {
+          data = JSON.parse(data);
+        } catch (e) {
+          data = {};
+        }
+      }
 
-  const id =
-    data.product_id !== undefined && data.product_id !== null
-      ? Number(data.product_id)
-      : Number(data.id || row.$id);
+      const id =
+        data.product_id !== undefined && data.product_id !== null
+          ? Number(data.product_id)
+          : Number(data.id || row.$id);
 
-  // البحث عن نفس المنتج في النسخة الاحتياطية
-  const fallback = allProductsFallback.find(
-    p => Number(p.id) === Number(id)
-  );
+      // البحث عن نفس المنتج في النسخة الاحتياطية
+      const fallback = allProductsFallback.find(
+        p => Number(p.id) === Number(id)
+      );
 
-  return {
-    id: id || fallback?.id || 0,
+      return {
+        id: id || fallback?.id || 0,
 
-    name:
-      data.name ||
-      fallback?.name ||
-      `منتج #${id}`,
+        name:
+          data.name ||
+          fallback?.name ||
+          `منتج #${id}`,
 
-    cat:
-      data.category ||
-      data.cat ||
-      fallback?.cat ||
-      "",
+        cat:
+          data.category ||
+          data.cat ||
+          fallback?.cat ||
+          "",
 
-    sub:
-      data.subcategory ||
-      data.sub ||
-      fallback?.sub ||
-      "",
+        sub:
+          data.subcategory ||
+          data.sub ||
+          fallback?.sub ||
+          "",
 
-    price:
-      data.price !== undefined &&
-      data.price !== null &&
-      data.price !== ""
-        ? Number(data.price)
-        : Number(fallback?.price || 0),
+        price:
+          data.price !== undefined &&
+            data.price !== null &&
+            data.price !== ""
+            ? Number(data.price)
+            : Number(fallback?.price || 0),
 
-    oldPrice:
-      data.old_price !== undefined &&
-      data.old_price !== null &&
-      data.old_price !== ""
-        ? Number(data.old_price)
-        : fallback?.oldPrice,
+        oldPrice:
+          data.old_price !== undefined &&
+            data.old_price !== null &&
+            data.old_price !== ""
+            ? Number(data.old_price)
+            : fallback?.oldPrice,
 
-    color:
-      data.color ||
-      fallback?.color ||
-      undefined,
+        color:
+          data.color ||
+          fallback?.color ||
+          undefined,
 
-    img:
-      data.image ||
-      data.img ||
-      fallback?.img ||
-      "",
+        img:
+          data.image ||
+          data.img ||
+          fallback?.img ||
+          "",
 
-    badge:
-      data.badge ||
-      fallback?.badge ||
-      undefined,
+        badge:
+          data.badge ||
+          fallback?.badge ||
+          undefined,
 
-    newUntil:
-      data.new_until ||
-      fallback?.newUntil ||
-      null,
+        newUntil:
+          data.new_until ||
+          fallback?.newUntil ||
+          null,
 
-    sale:
-      data.sale !== undefined
-        ? !!data.sale
-        : !!fallback?.sale
-  };
-});
+        sale:
+          data.sale !== undefined
+            ? !!data.sale
+            : !!fallback?.sale,
+        sizes: (() => {
+          try {
+            if (Array.isArray(data.sizes)) {
+              return data.sizes;
+            }
 
+            if (typeof data.sizes === "string") {
+              const parsed = JSON.parse(data.sizes);
+              return Array.isArray(parsed) ? parsed : [];
+            }
+
+            return [];
+          } catch (e) {
+            return [];
+          }
+        })(),
+
+        variants: (() => {
+          try {
+            if (Array.isArray(data.variants)) {
+              return data.variants;
+            }
+
+            if (typeof data.variants === "string") {
+              const parsed = JSON.parse(data.variants);
+              return Array.isArray(parsed) ? parsed : [];
+            }
+
+            return [];
+          } catch (e) {
+            return [];
+          }
+        })(),
+
+      };
+    });
   } catch (e) {
     console.warn(
       "تعذّر جلب المنتجات من Appwrite، تم استخدام النسخة الاحتياطية:",
@@ -721,52 +826,52 @@ allProducts = rows.map(row => {
     allProducts = allProductsFallback;
   }
 
-const appwriteProducts = allProducts || [];
+  const appwriteProducts = allProducts || [];
 
-// المنتجات الموجودة في Appwrite لها الأولوية
-const appwriteIds = new Set(
-  appwriteProducts.map(p => Number(p.id))
-);
+  // المنتجات الموجودة في Appwrite لها الأولوية
+  const appwriteIds = new Set(
+    appwriteProducts.map(p => Number(p.id))
+  );
 
-// أضف المنتجات الناقصة من النسخة الاحتياطية
-const missingFallbackProducts = allProductsFallback.filter(
-  p => !appwriteIds.has(Number(p.id))
-);
+  // أضف المنتجات الناقصة من النسخة الاحتياطية
+  const missingFallbackProducts = allProductsFallback.filter(
+    p => !appwriteIds.has(Number(p.id))
+  );
 
-// دمج Appwrite + المنتجات الاحتياطية
-allProducts = [
-  ...appwriteProducts,
-  ...missingFallbackProducts
-];
+  // دمج Appwrite + المنتجات الاحتياطية
+  allProducts = [
+    ...appwriteProducts,
+    ...missingFallbackProducts
+  ];
 
-products = allProducts.filter(
-  p =>
-    p &&
-    p.name &&
-    p.cat &&
-    !HIDDEN_CATEGORIES.includes(p.cat) &&
-    !HIDDEN_PRODUCT_IDS.includes(p.id)
-);
+  products = allProducts.filter(
+    p =>
+      p &&
+      p.name &&
+      p.cat &&
+      !HIDDEN_CATEGORIES.includes(p.cat) &&
+      !HIDDEN_PRODUCT_IDS.includes(p.id)
+  );
 
-console.log("📦 إجمالي منتجات المعرض:", products.length);
-console.log(
-  "☁️ منتجات Appwrite:",
-  appwriteProducts.length
-);
-console.log(
-  "📁 منتجات احتياطية مضافة:",
-  missingFallbackProducts.length
-);
+  console.log("📦 إجمالي منتجات المعرض:", products.length);
+  console.log(
+    "☁️ منتجات Appwrite:",
+    appwriteProducts.length
+  );
+  console.log(
+    "📁 منتجات احتياطية مضافة:",
+    missingFallbackProducts.length
+  );
 
-console.log("📦 إجمالي منتجات المعرض:", products.length);
-console.log(
-  "☁️ منتجات Appwrite:",
-  appwriteProducts.length
-);
-console.log(
-  "📁 منتجات احتياطية مضافة:",
-  missingFallbackProducts.length
-);
+  console.log("📦 إجمالي منتجات المعرض:", products.length);
+  console.log(
+    "☁️ منتجات Appwrite:",
+    appwriteProducts.length
+  );
+  console.log(
+    "📁 منتجات احتياطية مضافة:",
+    missingFallbackProducts.length
+  );
   console.log("📦 منتجات المعرض:", products);
 }
 
@@ -774,13 +879,30 @@ console.log(
 
 async function logVisit() {
   try {
+    /* نجيب بيانات الزبون الحالي (إذا مسجل دخول) حتى تظهر زيارته باسمه
+       الحقيقي بلوحة التحكم بدل رقم عشوائي طويل */
+    let visitorName = null;
+    let visitorId = null;
+
+    try {
+      const userResponse = await appwriteAuthFetch("/account");
+
+      if (userResponse.ok) {
+        const user = await userResponse.json();
+        visitorId = user?.$id || null;
+        visitorName = user?.name || user?.email || null;
+      }
+    } catch (e) {
+      // زائر غير مسجل، طبيعي
+    }
+
     await tablesDB.createRow({
       databaseId: APPWRITE_DATABASE_ID,
       tableId: "visits",
       rowId: crypto.randomUUID(),
       data: {
-        user_id: null,
-        visitor_name: null
+        user_id: visitorId,
+        visitor_name: visitorName
       }
     });
 
@@ -793,8 +915,8 @@ async function logVisit() {
     );
   }
 }
-const categories = ["الكل", "رجالي", "نسائي", "أطفال", "أحذية", "إكسسوارات", "مكياج", "أدوات منزلية"];
-const catKeyMap = { "الكل": "cat_all", "رجالي": "cat_men", "نسائي": "cat_women", "أطفال": "cat_kids", "أحذية": "cat_shoes", "إكسسوارات": "cat_acc", "مكياج": "cat_makeup", "أدوات منزلية": "cat_home" };
+const categories = ["الكل", "رجالي", "نسائي", "أطفال", "أحذية", "إكسسوارات", "مكياج", "أدوات منزلية", "مدرسة"];
+const catKeyMap = { "الكل": "cat_all", "رجالي": "cat_men", "نسائي": "cat_women", "أطفال": "cat_kids", "أحذية": "cat_shoes", "إكسسوارات": "cat_acc", "مكياج": "cat_makeup", "أدوات منزلية": "cat_home", "مدرسة": "cat_school" };
 
 /* ============ التصنيفات الفرعية لكل فئة رئيسية ============ */
 const subcatsByCat = {
@@ -804,10 +926,12 @@ const subcatsByCat = {
   "أحذية": ["صنادل", "كعوب", "كلاسيك", "أطفال"],
   "إكسسوارات": ["جنط", "مجوهرات", "ساعات", "اكسسوارات موبايل", "نظارات", "جوارب", "إكسسوارات شعر", "شعر مستعار"],
   "مكياج": ["مكياج", "عناية بالأظافر", "أدوات تجميل", "عناية بالبشرة"],
+  "مدرسة": ["أقلام", "دفاتر", "جنط"],
 };
 const subKeyMap = {
   "ملابس علوية": "sub_top", "أطقم منسقة": "sub_sets", "ملابس سفلية": "sub_bottom", "ملابس دينيم": "sub_denim",
   "فساتين": "sub_dresses", "تنانير": "sub_skirts", "بناتي": "sub_girls", "أولادي": "sub_boys",
+  "أقلام": "sub_pens", "دفاتر": "sub_notebooks",
   "صنادل": "sub_sandals", "كعوب": "sub_heels", "كلاسيك": "sub_classic", "أطفال": "sub_kidshoes",
   "شعر مستعار": "sub_hair", "جنط": "sub_bags", "مجوهرات": "sub_jewelry",
   "مكياج": "sub_makeup", "عناية بالأظافر": "sub_nailcare", "أدوات تجميل": "sub_beautytools", "عناية بالبشرة": "sub_skincare",
@@ -906,6 +1030,478 @@ function getDisplayBadge(p) {
   return p.badge || "";
 }
 
+/* ============ بانرات إعلانية متقلبة أعلى الصفحة ============
+   نظام عام يشتغل لأي بانر (وصل حديثاً، إكسسوارات، ملابس...) — كل بانر
+   إله حالة منفصلة (المؤقت + السلايد الحالي) حتى ما يتعارضوا مع بعض */
+const bannerStates = {};
+
+function isProductStillNew(p) {
+  return !!(p.newUntil && new Date(p.newUntil).getTime() > Date.now());
+}
+
+/* يبني بانر واحد. id = بادئة عناصر الـ HTML (مثلاً "new" لـ #newBanner)،
+   items = قائمة المنتجات المطلوب عرضها بهذا البانر */
+function renderBanner(id, items) {
+  const banner = document.getElementById(id + "Banner");
+  const track = document.getElementById(id + "BannerTrack");
+  const dotsEl = document.getElementById(id + "BannerDots");
+  if (!banner || !track || !dotsEl) return;
+
+  if (!bannerStates[id]) bannerStates[id] = { interval: null, index: 0 };
+  const state = bannerStates[id];
+
+  if (state.interval) {
+    clearInterval(state.interval);
+    state.interval = null;
+  }
+
+  if (!items.length) {
+    banner.style.display = "none";
+    return;
+  }
+
+  banner.style.display = "block";
+  state.index = 0;
+
+  track.innerHTML = items.map((p, i) => `
+    <div class="new-banner-slide ${i === 0 ? "active" : ""}" data-idx="${i}" onclick="goToProduct(${p.id})">
+      <img src="${p.img}" alt="${p.name}">
+      <div class="new-banner-slide-info">
+        <h4>${p.name}</h4>
+        <span class="new-banner-price-pill">${p.price}${CURRENCY}</span>
+      </div>
+    </div>
+  `).join("");
+
+  /* لو المنتجات كثيرة (أكثر من 6)، النقط تصير مزدحمة — نعرض بدالها
+     عداد بسيط "٢ / ١٣" أنظف وأوضح */
+  const useCounter = items.length > 6;
+  const counterId = id + "BannerCounter";
+
+  if (useCounter) {
+    dotsEl.style.display = "none";
+    let counterEl = document.getElementById(counterId);
+    if (!counterEl) {
+      counterEl = document.createElement("div");
+      counterEl.id = counterId;
+      counterEl.className = "new-banner-counter";
+      banner.appendChild(counterEl);
+    }
+    counterEl.style.display = "block";
+    counterEl.textContent = `1 / ${items.length}`;
+  } else {
+    dotsEl.style.display = "flex";
+    const counterEl = document.getElementById(counterId);
+    if (counterEl) counterEl.style.display = "none";
+
+    dotsEl.innerHTML = items.map((p, i) =>
+      `<span class="new-banner-dot ${i === 0 ? "active" : ""}" data-idx="${i}"></span>`
+    ).join("");
+
+    dotsEl.querySelectorAll(".new-banner-dot").forEach(dot => {
+      dot.onclick = (e) => {
+        e.stopPropagation();
+        showBannerSlide(id, Number(dot.dataset.idx), items.length);
+        restartBannerAutoplay(id, items.length);
+      };
+    });
+  }
+
+  if (items.length > 1) {
+    restartBannerAutoplay(id, items.length);
+  }
+}
+
+function showBannerSlide(id, idx, total) {
+  const track = document.getElementById(id + "BannerTrack");
+  const dotsEl = document.getElementById(id + "BannerDots");
+  const counterEl = document.getElementById(id + "BannerCounter");
+  if (!track) return;
+
+  track.querySelectorAll(".new-banner-slide").forEach(el =>
+    el.classList.toggle("active", Number(el.dataset.idx) === idx)
+  );
+
+  if (dotsEl) {
+    dotsEl.querySelectorAll(".new-banner-dot").forEach(el =>
+      el.classList.toggle("active", Number(el.dataset.idx) === idx)
+    );
+  }
+
+  if (counterEl && total) {
+    counterEl.textContent = `${idx + 1} / ${total}`;
+  }
+
+  if (bannerStates[id]) bannerStates[id].index = idx;
+}
+
+function restartBannerAutoplay(id, total) {
+  if (!bannerStates[id]) bannerStates[id] = { interval: null, index: 0 };
+  const state = bannerStates[id];
+  if (state.interval) clearInterval(state.interval);
+  state.interval = setInterval(() => {
+    showBannerSlide(id, (state.index + 1) % total, total);
+  }, 3800);
+}
+
+/* يشغّل الثلاث بانرات: وصل حديثاً، ملابس (رجالي+نسائي+أطفال)، إكسسوارات.
+   كل بانر يظهر بس لو عنده منتجات، وإلا يختفي تلقائياً */
+function renderAllBanners() {
+  const pool = (allProducts || []).filter(p => p && p.name && p.img);
+
+  const newItems = pool
+    .filter(isProductStillNew)
+    .sort((a, b) => new Date(b.newUntil) - new Date(a.newUntil));
+  renderBanner("new", newItems);
+
+  const clothesItems = pool
+    .filter(p => ["رجالي", "نسائي", "أطفال"].includes(p.cat))
+    .sort(() => Math.random() - 0.5)
+    .slice(0, 10);
+  renderBanner("clothes", clothesItems);
+
+  const accItems = pool
+    .filter(p => p.cat === "إكسسوارات")
+    .sort(() => Math.random() - 0.5)
+    .slice(0, 10);
+  renderBanner("acc", accItems);
+}
+/* ============ تفاصيل المنتج ============ */
+
+let selectedDetailSize = null;
+
+function parseProductSizes(product) {
+  if (!product) return [];
+
+  if (Array.isArray(product.sizes)) {
+    return product.sizes;
+  }
+
+  if (typeof product.sizes === "string") {
+    try {
+      const parsed = JSON.parse(product.sizes);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  return [];
+}
+
+function getDetailPrice(product, sizeName = null) {
+  const sizes = parseProductSizes(product);
+
+  if (sizeName && sizes.length) {
+    const selected = sizes.find(
+      size => String(size.name || size.size) === String(sizeName)
+    );
+
+    if (selected && Number.isFinite(Number(selected.price))) {
+      return Number(selected.price);
+    }
+  }
+
+  return Number(product?.price || 0);
+}
+
+function openProductDetails(productId) {
+  let product = products.find(
+    p => Number(p.id) === Number(productId)
+  );
+
+  if (!product) return;
+
+  const modal = document.getElementById("productDetailsModal");
+  if (!modal) return;
+
+  const image = document.getElementById("detailsImage");
+  const idEl = document.getElementById("detailsId");
+  const categoryEl = document.getElementById("detailsCategory");
+  const nameEl = document.getElementById("detailsName");
+  const colorEl = document.getElementById("detailsColor");
+  const descriptionEl = document.getElementById("detailsDescription");
+  const priceEl = document.getElementById("detailsPrice");
+  const sizesBox = document.getElementById("detailsSizesBox");
+  const sizesEl = document.getElementById("detailsSizes");
+  const variantsBox = document.getElementById("detailsVariantsBox");
+  const variantsEl = document.getElementById("detailsVariants");
+  const thumbnailsEl = document.getElementById("detailsThumbnails");
+  const addBtn = document.getElementById("detailsAddBtn");
+
+  selectedDetailSize = null;
+
+  /*
+    إيجاد المجموعة كاملة:
+    200 → 200 + 202 + 203
+    202 → 200 + 202 + 203
+    203 → 200 + 202 + 203
+  */
+  let groupProducts = [];
+
+  if (Array.isArray(product.variants) && product.variants.length) {
+    const groupIds = product.variants
+      .map(v => Number(v.id))
+      .filter(Number.isInteger);
+
+    groupProducts = products.filter(p =>
+      groupIds.includes(Number(p.id))
+    );
+  }
+
+  if (!groupProducts.length) {
+    groupProducts = [product];
+  }
+
+  /* تصحيح مؤقت لمشكلة "خيارات أخرى" جوة التطبيق — لازم تنشال بعدين */
+  if (isInsideMobileApp()) {
+    alert(
+      "🔍 تصحيح:\n" +
+      "product.variants = " + JSON.stringify(product.variants) + "\n" +
+      "عدد groupProducts = " + groupProducts.length
+    );
+  }
+
+  function renderProduct(selectedProduct) {
+    product = selectedProduct;
+    selectedDetailSize = null;
+
+    /* الصورة الكبيرة */
+    if (image) {
+      image.src = product.img || "";
+      image.alt = product.name || "";
+    }
+
+    /* رقم المنتج */
+    if (idEl) {
+      idEl.textContent = `#${product.id}`;
+    }
+
+    /* الفئة */
+    if (categoryEl) {
+      categoryEl.textContent =
+        t(catKeyMap[product.cat] || product.cat || "");
+    }
+
+    /* الاسم */
+    if (nameEl) {
+      nameEl.textContent = product.name || "";
+    }
+
+    /* اللون */
+    if (colorEl) {
+      if (product.color) {
+        colorEl.textContent = `اللون: ${product.color}`;
+        colorEl.style.display = "block";
+      } else {
+        colorEl.textContent = "";
+        colorEl.style.display = "none";
+      }
+    }
+
+    /* الوصف */
+    if (descriptionEl) {
+      descriptionEl.textContent = "";
+      descriptionEl.style.display = "none";
+    }
+
+    /* السعر والقياسات */
+    const sizes = parseProductSizes(product);
+
+    if (sizes.length) {
+      if (sizesBox) {
+        sizesBox.style.display = "block";
+      }
+
+      if (sizesEl) {
+        sizesEl.innerHTML = "";
+
+        sizes.forEach(size => {
+          const button = document.createElement("button");
+
+          button.type = "button";
+          button.className = "detail-size-btn";
+
+          const sizeName = size.name || size.size;
+
+          button.textContent =
+            `${sizeName} — ${Number(size.price)}${CURRENCY}`;
+
+          button.onclick = () => {
+            selectedDetailSize = String(sizeName);
+
+            document
+              .querySelectorAll(".detail-size-btn")
+              .forEach(btn => {
+                btn.classList.remove("active");
+              });
+
+            button.classList.add("active");
+
+            if (priceEl) {
+              priceEl.textContent =
+                `${getDetailPrice(product, selectedDetailSize)}${CURRENCY}`;
+            }
+
+            if (addBtn) {
+              addBtn.disabled = false;
+            }
+          };
+
+          sizesEl.appendChild(button);
+        });
+      }
+
+      if (priceEl) {
+        priceEl.textContent = "اختر القياس";
+      }
+
+      if (addBtn) {
+        addBtn.disabled = true;
+      }
+
+    } else {
+      if (sizesBox) {
+        sizesBox.style.display = "none";
+      }
+
+      if (priceEl) {
+        priceEl.textContent =
+          `${getDetailPrice(product)}${CURRENCY}`;
+      }
+
+      if (addBtn) {
+        addBtn.disabled = false;
+      }
+    }
+
+    /* ================= صور خيارات المجموعة ================= */
+
+    if (thumbnailsEl) {
+      thumbnailsEl.innerHTML = "";
+
+      groupProducts.forEach(groupProduct => {
+
+        const thumb = document.createElement("div");
+
+        thumb.className = "details-thumbnail";
+
+        if (
+          Number(groupProduct.id) ===
+          Number(product.id)
+        ) {
+          thumb.classList.add("active");
+        }
+
+        thumb.innerHTML = `
+          <img
+            src="${groupProduct.img || ""}"
+            alt="${groupProduct.name || ""}"
+          >
+        `;
+
+        thumb.onclick = (e) => {
+          e.stopPropagation();
+          renderProduct(groupProduct);
+        };
+
+        thumbnailsEl.appendChild(thumb);
+      });
+    }
+
+    /* ================= نفس الخيارات تحت زر القياس ================= */
+
+    if (variantsBox && variantsEl) {
+
+      if (groupProducts.length > 1) {
+
+        variantsBox.style.display = "block";
+        variantsEl.innerHTML = "";
+
+        groupProducts.forEach(groupProduct => {
+
+          const button = document.createElement("button");
+
+          button.type = "button";
+          button.className = "detail-variant-btn";
+
+          if (
+            Number(groupProduct.id) ===
+            Number(product.id)
+          ) {
+            button.classList.add("active");
+          }
+
+          button.innerHTML = `
+            <img
+              src="${groupProduct.img || ""}"
+              alt="${groupProduct.name || ""}"
+            >
+
+            <span>
+              ${groupProduct.color ||
+            groupProduct.name ||
+            `#${groupProduct.id}`
+            }
+            </span>
+          `;
+
+          button.onclick = (e) => {
+            e.stopPropagation();
+            renderProduct(groupProduct);
+          };
+
+          variantsEl.appendChild(button);
+        });
+
+      } else {
+
+        variantsBox.style.display = "none";
+        variantsEl.innerHTML = "";
+      }
+    }
+
+    /* ================= زر السلة ================= */
+
+    if (addBtn) {
+      addBtn.onclick = () => {
+
+        if (sizes.length && !selectedDetailSize) {
+          return;
+        }
+
+        const price = getDetailPrice(
+          product,
+          selectedDetailSize
+        );
+
+        addToCart(
+          product.id,
+          selectedDetailSize,
+          price
+        );
+
+        closeProductDetails();
+      };
+    }
+  }
+
+  renderProduct(product);
+
+  modal.classList.add("show");
+  document.body.style.overflow = "hidden";
+}
+function closeProductDetails() {
+  const modal = document.getElementById("productDetailsModal");
+
+  if (!modal) return;
+
+  modal.classList.remove("show");
+
+  selectedDetailSize = null;
+
+  document.body.style.overflow = "";
+}
 function renderGallery() {
   galleryEl.innerHTML = "";
   let list = activeCat === "الكل" ? [...products] : products.filter(p => p.cat === activeCat);
@@ -937,7 +1533,11 @@ function renderGallery() {
     card.className = "card";
     card.innerHTML = `
       <div class="card-img">
-        <img src="${p.img}" alt="${p.name}" ${p.fallback ? `onerror="this.onerror=null;this.src='${p.fallback}'"` : ""} onclick="openLightbox(this.src,'${p.name.replace(/'/g, "\\'")}')">
+       <img
+  src="${p.img}"
+  alt="${p.name}"
+  ${p.fallback ? `onerror="this.onerror=null;this.src='${p.fallback}'"` : ""}
+>
         <span class="product-id">#${p.id}</span>
         ${getDisplayBadge(p) ? `<span class="badge ${p.sale ? 'sale' : ''} ${p.best ? 'best' : ''}">${getDisplayBadge(p)}</span>` : ""}
       </div>
@@ -955,6 +1555,9 @@ function renderGallery() {
         </div>
       </div>`;
     galleryEl.appendChild(card);
+    card.onclick = () => {
+      openProductDetails(p.id);
+    };
   });
 
   document.querySelectorAll(".add-btn").forEach(btn => {
@@ -984,9 +1587,18 @@ function observeCards() {
 }
 
 /* ============ السلة ============ */
-function addToCart(id) {
-  const existing = cart.find(c => c.id === id);
-  if (existing) { existing.qty++; } else { cart.push({ id, qty: 1 }); }
+function addToCart(id, size = null, price = null) {
+  const existing = cart.find(c => c.id === id && (!size || c.size === size));
+  if (existing) {
+    existing.qty++;
+  } else {
+    cart.push({
+      id,
+      qty: 1,
+      size: size || null,
+      sizePrice: price || null
+    });
+  }
   saveCartToStorage();
   updateCartUI();
 }
@@ -998,8 +1610,14 @@ function changeQty(id, delta) {
   saveCartToStorage();
   updateCartUI();
 }
-function removeFromCart(id) {
-  cart = cart.filter(c => c.id !== id);
+function removeFromCart(id, size = null) {
+  if (size) {
+    // إذا تم تحديد القياس، احذف فقط العنصر مع هذا القياس
+    cart = cart.filter(c => !(c.id === id && c.size === size));
+  } else {
+    // وإلا، احذف جميع العناصر بهذا المعرّف
+    cart = cart.filter(c => c.id !== id);
+  }
   saveCartToStorage();
   updateCartUI();
 }
@@ -1039,7 +1657,9 @@ function updateCartUI() {
 
     if (!p) return "";
 
-    const subtotal = Number(p.price || 0) * c.qty;
+    // استخدام سعر القياس إذا كان موجوداً، وإلا استخدم السعر الافتراضي
+    const itemPrice = c.sizePrice !== null && c.sizePrice !== undefined ? c.sizePrice : Number(p.price || 0);
+    const subtotal = itemPrice * c.qty;
     total += subtotal;
 
     return `
@@ -1048,8 +1668,8 @@ function updateCartUI() {
           src="${p.img}"
           alt="${p.name}"
           ${p.fallback
-            ? `onerror="this.onerror=null;this.src='${p.fallback}'"`
-            : ""}
+        ? `onerror="this.onerror=null;this.src='${p.fallback}'"`
+        : ""}
         >
 
         <div class="ci-info">
@@ -1057,9 +1677,11 @@ function updateCartUI() {
             ${p.name}
             <span class="ci-id">#${p.id}</span>
           </h4>
+          
+          ${c.size ? `<span class="ci-size" style="font-size: 12px; color: var(--accent); margin-bottom: 4px; display: block;">📏 المقاس: ${c.size}</span>` : ""}
 
           <span class="ci-price">
-            ${p.price}${CURRENCY} × ${c.qty} = ${subtotal}${CURRENCY}
+            ${itemPrice}${CURRENCY} × ${c.qty} = ${subtotal}${CURRENCY}
           </span>
 
           <div class="qty-row">
@@ -1243,17 +1865,7 @@ function getCustomerFullName(session) {
 
 async function refreshAccountModalView() {
   try {
-    const response = await fetch(
-      `${APPWRITE_ENDPOINT}/account`,
-      {
-        method: "GET",
-        credentials: "include",
-        headers: {
-          "Accept": "application/json",
-          "X-Appwrite-Project": APPWRITE_PROJECT_ID
-        }
-      }
-    );
+    const response = await appwriteAuthFetch("/account");
 
     const userData =
       await response.json().catch(() => ({}));
@@ -1306,12 +1918,10 @@ async function refreshAccountModalView() {
       accountBtn.classList.remove("has-avatar");
     }
 
-    const ordersList =
-      document.getElementById("accOrdersList");
-
-    if (ordersList) {
-      ordersList.innerHTML =
-        `<div class="acc-empty">سيتم نقل الطلبات إلى Appwrite لاحقًا</div>`;
+    /* هذا كان مكانه نص ثابت بدل ما يستدعي الدالة الحقيقية اللي تجيب الفواتير
+       الفعلية من Appwrite — كانت الفواتير ما تظهر أبداً حتى لو كل شي ثاني صحيح */
+    if (typeof loadMyOrders === "function") {
+      loadMyOrders();
     }
 
   } catch (error) {
@@ -1360,6 +1970,9 @@ async function handleCustomerSignup() {
   }
 
   try {
+    /* نمسح أي جلسة قديمة شغالة قبل إنشاء الحساب، لنفس سبب تسجيل الدخول */
+    await appwriteAuthFetch("/account/sessions/current", { method: "DELETE" }).catch(() => { });
+
     /* ================= إنشاء الحساب في Appwrite ================= */
 
     const userId =
@@ -1371,30 +1984,16 @@ async function handleCustomerSignup() {
         .slice(2, 10);
 
     const createUserResponse =
-      await fetch(
-        `${APPWRITE_ENDPOINT}/account`,
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type":
-              "application/json",
-
-            "Accept":
-              "application/json",
-
-            "X-Appwrite-Project":
-              APPWRITE_PROJECT_ID
-          },
-
-          body: JSON.stringify({
-            userId: userId,
-            email: email,
-            password: password,
-            name: name
-          })
-        }
-      );
+      await appwriteAuthFetch("/account", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: userId,
+          email: email,
+          password: password,
+          name: name
+        })
+      });
 
     if (!createUserResponse.ok) {
       const errorData =
@@ -1411,28 +2010,14 @@ async function handleCustomerSignup() {
     /* ================= تسجيل الدخول مباشرة ================= */
 
     const loginResponse =
-      await fetch(
-        `${APPWRITE_ENDPOINT}/account/sessions/email`,
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type":
-              "application/json",
-
-            "Accept":
-              "application/json",
-
-            "X-Appwrite-Project":
-              APPWRITE_PROJECT_ID
-          },
-
-          body: JSON.stringify({
-            email: email,
-            password: password
-          })
-        }
-      );
+      await appwriteAuthFetch("/account/sessions/email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: email,
+          password: password
+        })
+      });
 
     if (!loginResponse.ok) {
       const loginError =
@@ -1531,27 +2116,21 @@ async function handleCustomerLogin() {
   }
 
   try {
+    /* إذا كان بالمتصفح جلسة قديمة شغالة (حتى لو منتهية الصلاحية أو تخص حساب
+       ثاني)، Appwrite يرفض إنشاء جلسة جديدة فوقها برسالة "session is active" —
+       نمسحها أول قبل أي محاولة دخول جديدة حتى ما يصير هذا الخطأ */
+    await appwriteAuthFetch("/account/sessions/current", { method: "DELETE" }).catch(() => { });
+
     /* ================= تسجيل الدخول في Appwrite ================= */
 
-    const response = await fetch(
-      `${APPWRITE_ENDPOINT}/account/sessions/email`,
-      {
-        method: "POST",
-        credentials: "include",
-
-        headers: {
-          "Content-Type": "application/json",
-          "Accept": "application/json",
-          "X-Appwrite-Project":
-            APPWRITE_PROJECT_ID
-        },
-
-        body: JSON.stringify({
-          email: email,
-          password: password
-        })
-      }
-    );
+    const response = await appwriteAuthFetch("/account/sessions/email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: email,
+        password: password
+      })
+    });
 
     const result =
       await response.json().catch(() => ({}));
@@ -1565,19 +2144,7 @@ async function handleCustomerLogin() {
 
     /* ================= جلب بيانات المستخدم من Appwrite ================= */
 
-    const userResponse = await fetch(
-      `${APPWRITE_ENDPOINT}/account`,
-      {
-        method: "GET",
-        credentials: "include",
-
-        headers: {
-          "Accept": "application/json",
-          "X-Appwrite-Project":
-            APPWRITE_PROJECT_ID
-        }
-      }
-    );
+    const userResponse = await appwriteAuthFetch("/account");
 
     const userData =
       await userResponse.json().catch(() => ({}));
@@ -1666,248 +2233,224 @@ async function handleGoogleAuth() {
 
 /* إرسال رابط إعادة تعيين كلمة السر على الإيميل */
 async function handleForgotPassword() {
+  const errEl =
+    document.getElementById("accountError");
+
+  const email =
+    document
+      .getElementById("custLoginEmail")
+      .value
+      .trim();
+
+  errEl.style.color = "";
+  errEl.textContent = "";
+
+  if (!email) {
+    errEl.textContent =
+      "اكتب إيميلك بالأول حتى نرسلّك رابط تغيير كلمة السر";
+    return;
+  }
+
+  try {
+    const recoveryUrl =
+      window.location.origin +
+      window.location.pathname;
+
+    const response = await appwriteAuthFetch("/account/recovery", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: email,
+        url: recoveryUrl
+      })
+    });
+
+    const result =
+      await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(
+        result.message ||
+        "تعذر إرسال رابط تغيير كلمة السر"
+      );
+    }
+
+    errEl.style.color = "#1FAE7A";
+    errEl.textContent =
+      "تم إرسال رابط تغيير كلمة السر لإيميلك ✅";
+
+  } catch (error) {
+
+    console.error(
+      "APPWRITE PASSWORD RECOVERY ERROR:",
+      error
+    );
+
+    errEl.style.color = "";
+    errEl.textContent =
+      "❌ تعذر إرسال رابط تغيير كلمة السر، جرّب مرة ثانية";
+  }
+}
+
+async function handleCustomerLogout() {
+  try {
+    const response = await appwriteAuthFetch("/account/sessions/current", {
+      method: "DELETE"
+    });
+
+    if (!response.ok && response.status !== 401) {
+      const errorData =
+        await response.json().catch(() => ({}));
+
+      throw new Error(
+        errorData.message ||
+        "تعذر تسجيل الخروج"
+      );
+    }
+
+    // مسح جلسة Appwrite المحلية
+    window.appwriteCustomerSession = null;
+
+    // مسح بيانات الحساب المحفوظة محليًا
+    try {
+      localStorage.removeItem("appwrite_customer_name");
+      localStorage.removeItem("appwrite_customer_email");
+    } catch (e) {
+      console.warn(
+        "تعذر مسح بيانات الحساب المحلية:",
+        e
+      );
+    }
+
+    // تحديث نافذة الحساب
+    await refreshAccountModalView();
+
+  } catch (error) {
+
+    console.error(
+      "APPWRITE LOGOUT ERROR:",
+      error
+    );
+
     const errEl =
       document.getElementById("accountError");
 
-    const email =
-      document
-        .getElementById("custLoginEmail")
-        .value
-        .trim();
-
-    errEl.style.color = "";
-    errEl.textContent = "";
-
-    if (!email) {
+    if (errEl) {
       errEl.textContent =
-        "اكتب إيميلك بالأول حتى نرسلّك رابط تغيير كلمة السر";
+        "❌ تعذر تسجيل الخروج، حاول مرة ثانية";
+    }
+  }
+}
+
+/* ينتظر تحميل قائمة المنتجات (لازمة لتجهيز نص رسالة الفاتورة) */
+async function waitForProducts(timeoutMs) {
+  const limit = timeoutMs || 8000;
+  const start = Date.now();
+  while ((!products || !products.length) && Date.now() - start < limit) {
+    await new Promise(r => setTimeout(r, 150));
+  }
+}
+
+/* إذا كان في طلب فاتورة معلّق بانتظار تسجيل الدخول (مثلاً بعد الرجوع من Google)، نكمّل إرساله تلقائياً */
+async function completePendingCheckoutIfAny() {
+  let pending;
+  try { pending = localStorage.getItem(PENDING_CHECKOUT_KEY); } catch (e) { pending = null; }
+  if (!pending || !customerSession) return;
+
+  try { localStorage.removeItem(PENDING_CHECKOUT_KEY); } catch (e) { }
+  accountModalContext = null;
+
+  await waitForProducts();
+  if (!cart.length) return;
+
+  closeAccountModal();
+  await sendWhatsAppOrder();
+}
+
+async function loadMyOrders() {
+  const listEl = document.getElementById("accOrdersList");
+
+  if (!listEl) return;
+
+  listEl.innerHTML =
+    `<div class="acc-empty">جاري التحميل...</div>`;
+
+  try {
+    /* الحصول على المستخدم الحالي من Appwrite */
+    const userResponse = await appwriteAuthFetch("/account");
+
+    if (!userResponse.ok) {
+      listEl.innerHTML =
+        `<div class="acc-empty">سجّل دخولك أولاً</div>`;
       return;
     }
 
-    try {
-      const recoveryUrl =
-        window.location.origin +
-        window.location.pathname;
+    const user = await userResponse.json();
 
-      const response = await fetch(
-        `${APPWRITE_ENDPOINT}/account/recovery`,
-        {
-          method: "POST",
+    /* جلب طلبات المستخدم الحالي فقط — الفلترة تصير من السيرفر مباشرة
+       (Query.equal) بدل ما نجيب كل فواتير كل الزبائن ونخفي الباقي بالمتصفح،
+       حتى ما توصل فواتير غير زبائن لجهاز الزبون أصلًا */
+    const result = await tablesDB.listRows({
+      databaseId: APPWRITE_DATABASE_ID,
+      tableId: APPWRITE_ORDERS_TABLE_ID,
+      queries: [
+        Appwrite.Query.equal("customer_id", user.$id),
+        Appwrite.Query.orderDesc("$createdAt"),
+        Appwrite.Query.limit(100)
+      ]
+    });
 
-          headers: {
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-            "X-Appwrite-Project":
-              APPWRITE_PROJECT_ID
-          },
+    const rows = Array.isArray(result.rows) ? result.rows : [];
 
-          body: JSON.stringify({
-            email: email,
-            url: recoveryUrl
-          })
-        }
-      );
+    const myOrders = rows.map(row => ({
+      $createdAt: row.$createdAt,
+      data: row
+    }));
 
-      const result =
-        await response.json().catch(() => ({}));
-
-      if (!response.ok) {
-        throw new Error(
-          result.message ||
-          "تعذر إرسال رابط تغيير كلمة السر"
-        );
-      }
-
-      errEl.style.color = "#1FAE7A";
-      errEl.textContent =
-        "تم إرسال رابط تغيير كلمة السر لإيميلك ✅";
-
-    } catch (error) {
-
-      console.error(
-        "APPWRITE PASSWORD RECOVERY ERROR:",
-        error
-      );
-
-      errEl.style.color = "";
-      errEl.textContent =
-        "❌ تعذر إرسال رابط تغيير كلمة السر، جرّب مرة ثانية";
+    if (!myOrders.length) {
+      listEl.innerHTML =
+        `<div class="acc-empty">ما عندك طلبات سابقة بعد</div>`;
+      return;
     }
-  }
 
-  async function handleCustomerLogout() {
-    try {
-      const response = await fetch(
-        `${APPWRITE_ENDPOINT}/account/sessions/current`,
-        {
-          method: "DELETE",
-          credentials: "include",
+    listEl.innerHTML = myOrders.map(o => {
+      const data = o.data || {};
 
-          headers: {
-            "Accept": "application/json",
-            "X-Appwrite-Project": APPWRITE_PROJECT_ID
-          }
-        }
-      );
-
-      if (!response.ok && response.status !== 401) {
-        const errorData =
-          await response.json().catch(() => ({}));
-
-        throw new Error(
-          errorData.message ||
-          "تعذر تسجيل الخروج"
-        );
-      }
-
-      // مسح جلسة Appwrite المحلية
-      window.appwriteCustomerSession = null;
-
-      // مسح بيانات الحساب المحفوظة محليًا
-      try {
-        localStorage.removeItem("appwrite_customer_name");
-        localStorage.removeItem("appwrite_customer_email");
-      } catch (e) {
-        console.warn(
-          "تعذر مسح بيانات الحساب المحلية:",
-          e
-        );
-      }
-
-      // تحديث نافذة الحساب
-      await refreshAccountModalView();
-
-    } catch (error) {
-
-      console.error(
-        "APPWRITE LOGOUT ERROR:",
-        error
-      );
-
-      const errEl =
-        document.getElementById("accountError");
-
-      if (errEl) {
-        errEl.textContent =
-          "❌ تعذر تسجيل الخروج، حاول مرة ثانية";
-      }
-    }
-  }
-
-  /* ينتظر تحميل قائمة المنتجات (لازمة لتجهيز نص رسالة الفاتورة) */
-  async function waitForProducts(timeoutMs) {
-    const limit = timeoutMs || 8000;
-    const start = Date.now();
-    while ((!products || !products.length) && Date.now() - start < limit) {
-      await new Promise(r => setTimeout(r, 150));
-    }
-  }
-
-  /* إذا كان في طلب فاتورة معلّق بانتظار تسجيل الدخول (مثلاً بعد الرجوع من Google)، نكمّل إرساله تلقائياً */
-  async function completePendingCheckoutIfAny() {
-    let pending;
-    try { pending = localStorage.getItem(PENDING_CHECKOUT_KEY); } catch (e) { pending = null; }
-    if (!pending || !customerSession) return;
-
-    try { localStorage.removeItem(PENDING_CHECKOUT_KEY); } catch (e) { }
-    accountModalContext = null;
-
-    await waitForProducts();
-    if (!cart.length) return;
-
-    closeAccountModal();
-    await sendWhatsAppOrder();
-  }
-
-  async function loadMyOrders() {
-    const listEl = document.getElementById("accOrdersList");
-
-    if (!listEl) return;
-
-    listEl.innerHTML =
-      `<div class="acc-empty">جاري التحميل...</div>`;
-
-    try {
-      /* الحصول على المستخدم الحالي من Appwrite */
-      const userResponse = await fetch(
-        `${APPWRITE_ENDPOINT}/account`,
-        {
-          method: "GET",
-          credentials: "include",
-          headers: {
-            "Accept": "application/json",
-            "X-Appwrite-Project": APPWRITE_PROJECT_ID
-          }
-        }
-      );
-
-      if (!userResponse.ok) {
-        listEl.innerHTML =
-          `<div class="acc-empty">سجّل دخولك أولاً</div>`;
-        return;
-      }
-
-      const user = await userResponse.json();
-
-      /* جلب طلبات المستخدم الحالي فقط — الفلترة تصير من السيرفر مباشرة
-         (Query.equal) بدل ما نجيب كل فواتير كل الزبائن ونخفي الباقي بالمتصفح،
-         حتى ما توصل فواتير غير زبائن لجهاز الزبون أصلًا */
-      const result = await tablesDB.listRows({
-        databaseId: APPWRITE_DATABASE_ID,
-        tableId: "orders",
-        queries: [
-          Appwrite.Query.equal("customer_id", user.$id),
-          Appwrite.Query.orderDesc("$createdAt"),
-          Appwrite.Query.limit(100)
-        ]
+      const date = new Date(
+        o.$createdAt
+      ).toLocaleDateString("ar-EG", {
+        year: "numeric",
+        month: "short",
+        day: "numeric"
       });
 
-      const rows = Array.isArray(result.rows) ? result.rows : [];
+      let items = data.items || [];
 
-      const myOrders = rows.map(row => ({
-        $createdAt: row.$createdAt,
-        data: row
-      }));
-
-      if (!myOrders.length) {
-        listEl.innerHTML =
-          `<div class="acc-empty">ما عندك طلبات سابقة بعد</div>`;
-        return;
+      /* في حال كانت items محفوظة كنص JSON */
+      if (typeof items === "string") {
+        try {
+          items = JSON.parse(items);
+        } catch (e) {
+          items = [];
+        }
       }
 
-      listEl.innerHTML = myOrders.map(o => {
-        const data = o.data || {};
-
-        const date = new Date(
-          o.$createdAt
-        ).toLocaleDateString("ar-EG", {
-          year: "numeric",
-          month: "short",
-          day: "numeric"
-        });
-
-        let items = data.items || [];
-
-        /* في حال كانت items محفوظة كنص JSON */
-        if (typeof items === "string") {
-          try {
-            items = JSON.parse(items);
-          } catch (e) {
-            items = [];
-          }
-        }
-
-        const itemsText = Array.isArray(items)
-          ? items.map(it => {
-            if (typeof it === "string") {
+      const itemsText = Array.isArray(items)
+        ? items.map(it => {
+          if (typeof it === "string") {
+            try {
+              const parsed = JSON.parse(it);
+              return `${parsed.name || ""} × ${parsed.qty || 1}`;
+            } catch (e) {
               return it;
             }
+          }
 
-            return `${it.name || ""} × ${it.qty || 1}`;
-          }).join("، ")
-          : "";
+          return `${it.name || ""} × ${it.qty || 1}`;
+        }).join("، ")
+        : "";
 
-        return `
+      return `
         <div class="acc-order-card">
           <div class="acc-order-head">
             <span>طلب #${o.$id}</span>
@@ -1923,18 +2466,18 @@ async function handleForgotPassword() {
           </div>
         </div>
       `;
-      }).join("");
+    }).join("");
 
-    } catch (error) {
-      console.error(
-        "APPWRITE LOAD ORDERS ERROR:",
-        error
-      );
+  } catch (error) {
+    console.error(
+      "APPWRITE LOAD ORDERS ERROR:",
+      error
+    );
 
-      listEl.innerHTML =
-        `<div class="acc-empty">تعذر تحميل الطلبات</div>`;
-    }
+    listEl.innerHTML =
+      `<div class="acc-empty">تعذر تحميل الطلبات</div>`;
   }
+}
 
 /* ============ نافذة "تواصل معنا" (واتساب + انستغرام) ============ */
 function openContactModal() {
@@ -2083,17 +2626,7 @@ async function saveOrderRecord(items, total, customerName) {
     let user = null;
 
     try {
-      const userResponse = await fetch(
-        `${APPWRITE_ENDPOINT}/account`,
-        {
-          method: "GET",
-          credentials: "include",
-          headers: {
-            "Accept": "application/json",
-            "X-Appwrite-Project": APPWRITE_PROJECT_ID
-          }
-        }
-      );
+      const userResponse = await appwriteAuthFetch("/account");
 
       if (userResponse.ok) {
         user = await userResponse.json();
@@ -2116,17 +2649,11 @@ async function saveOrderRecord(items, total, customerName) {
       ? orderItems.map(item => JSON.stringify(item))
       : [];
 
-    const response = await fetch(
-      `${APPWRITE_ENDPOINT}/tablesdb/` +
-      `${APPWRITE_DATABASE_ID}/tables/orders/rows`,
+    const response = await appwriteAuthFetch(
+      `/tablesdb/${APPWRITE_DATABASE_ID}/tables/${APPWRITE_ORDERS_TABLE_ID}/rows`,
       {
         method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          "Accept": "application/json",
-          "X-Appwrite-Project": APPWRITE_PROJECT_ID
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           rowId: crypto.randomUUID(),
           data: {
@@ -2134,7 +2661,13 @@ async function saveOrderRecord(items, total, customerName) {
             customer_name: finalCustomerName,
             items: finalItems,
             total: String(total)
-          }
+          },
+          /* صلاحية قراءة هذا الطلب بالذات: لصاحبه (إذا كان زبون مسجل) + للأدمن دايماً.
+             هذا يخلي كل زبون يشوف طلباته هو بس (مو كل الطلبات)، بشرط تفعيل
+             "Document Security" لجدول orders من إعدادات Appwrite */
+          permissions: customerId
+            ? [`read("user:${customerId}")`, `read("label:admin")`]
+            : [`read("label:admin")`]
         })
       }
     );
@@ -2172,17 +2705,7 @@ async function sendWhatsAppOrder() {
   // نتأكد من حالة تسجيل الدخول الفعلية من Appwrite قبل إرسال الطلب
 
   try {
-    const response = await fetch(
-      `${APPWRITE_ENDPOINT}/account`,
-      {
-        method: "GET",
-        credentials: "include",
-        headers: {
-          "Accept": "application/json",
-          "X-Appwrite-Project": APPWRITE_PROJECT_ID
-        }
-      }
-    );
+    const response = await appwriteAuthFetch("/account");
 
     if (response.ok) {
       const user = await response.json();
@@ -2271,5 +2794,6 @@ async function initApp() {
   // applyLanguage() بحالها بترسم الفلاتر + المعرض + السلة، فما في داعي نرسمهم قبلها
   // (كان الرسم يصير مرتين ورا بعض هون، وهاد يلي كان يسبب اختفاء/وميض الصور لحظة فتح الموقع)
   applyLanguage(currentLang);
+  renderAllBanners();
 }
 initApp();

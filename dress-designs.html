@@ -70,7 +70,12 @@ header img{height:38px}.back{color:var(--deep);font-weight:700;text-decoration:n
 .kindtg{display:flex;background:var(--soft);border-radius:12px;padding:3px;gap:3px}
 .ktb{border:0;background:none;padding:6px 12px;border-radius:9px;font-size:11.5px;font-weight:800;color:var(--muted)}
 .ktb.on{background:var(--pink);color:#fff}
-</style><style>html.in-app,html.in-app body{touch-action:pan-x pan-y}</style>
+</style><style>
+html.in-app,html.in-app body{touch-action:pan-x pan-y}
+html.in-app body{padding-top:0!important}
+html.in-app body>header{display:none!important;visibility:hidden!important}
+html.in-app .bar{display:none!important}
+</style>
 <script>
 try{if(sessionStorage.getItem("in_app")==="1"||/[?&]app=1(&|$)/.test(location.search)||/StyleRojApp|; wv\)/i.test(navigator.userAgent)){
  sessionStorage.setItem("in_app","1");document.documentElement.classList.add("in-app");

@@ -1627,12 +1627,7 @@ html.in-app body {
 }
 
 html.in-app body > header {
-  box-sizing: border-box !important;
-  min-height: 64px !important;
-  padding: 8px 12px !important;
-  background: linear-gradient(135deg, #ffffff, #fff6f9) !important;
-  box-shadow: 0 5px 18px rgba(214, 61, 110, 0.16) !important;
-  z-index: 1000 !important;
+  display: none !important;
 }
 
 html.in-app .hero {

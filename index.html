@@ -9,12 +9,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Lalezar&family=Cairo:wght@400;500;600;700;800&display=swap"
     rel="stylesheet">
- <link rel="stylesheet" href="style.css?v=20261019recovery">
+ <link rel="stylesheet" href="style.css?v=20261027-app-header-fix2">
 
   <!-- إخفاء شريط "تنزيل التطبيق" إذا الموقع مفتوح من داخل التطبيق نفسه -->
   <style>
     html.in-app .app-download-bar { display: none !important; }
     html.in-app, html.in-app body { touch-action: pan-x pan-y; }
+    /* التطبيق يرسم هيدره بنفسه؛ أخفِ هيدر الموقع داخله فقط. */
+    html.in-app body > header { display: none !important; visibility: hidden !important; }
     /* إخفاء تسجيل Google داخل التطبيق (Google بيمنعه داخل WebView) */
     html.in-app #googleDivider, html.in-app #googleSocialRow { display: none !important; }
   </style>

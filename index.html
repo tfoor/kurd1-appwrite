@@ -9,19 +9,56 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Lalezar&family=Cairo:wght@400;500;600;700;800&display=swap"
     rel="stylesheet">
- <link rel="stylesheet" href="style.css?v=20260913variants">
+ <link rel="stylesheet" href="style.css?v=20261019recovery">
+
+  <!-- إخفاء شريط "تنزيل التطبيق" إذا الموقع مفتوح من داخل التطبيق نفسه -->
+  <style>
+    html.in-app .app-download-bar { display: none !important; }
+    html.in-app, html.in-app body { touch-action: pan-x pan-y; }
+    /* إخفاء تسجيل Google داخل التطبيق (Google بيمنعه داخل WebView) */
+    html.in-app #googleDivider, html.in-app #googleSocialRow { display: none !important; }
+  </style>
+  <script>
+    (function () {
+      try {
+        var ua = navigator.userAgent || "";
+        var inApp =
+          window.matchMedia("(display-mode: standalone)").matches ||
+          window.matchMedia("(display-mode: fullscreen)").matches ||
+          window.matchMedia("(display-mode: minimal-ui)").matches ||
+          window.navigator.standalone === true ||                        /* iOS (مثبّت على الشاشة) */
+          (document.referrer || "").indexOf("android-app://") === 0 ||   /* TWA / تطبيق أندرويد */
+          /; wv\)/.test(ua) ||                                           /* Android WebView */
+          /StyleRojApp/i.test(ua) ||                                     /* علامة مخصصة من التطبيق */
+          /[?&]app=1(&|$)/.test(location.search);                        /* رابط التطبيق ?app=1 */
+
+        /* نتذكر إنه تطبيق حتى لو تنقّل المستخدم بين الصفحات بدون ?app=1 */
+        if (inApp) sessionStorage.setItem("in_app", "1");
+        if (sessionStorage.getItem("in_app") === "1") {
+          document.documentElement.classList.add("in-app");
+
+          /* منع تكبير الشاشة بالأصابع داخل التطبيق فقط (على الموقع العادي بيضل مسموح) */
+          var vp = document.querySelector('meta[name="viewport"]');
+          if (vp) vp.setAttribute("content", "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no");
+          document.addEventListener("gesturestart", function (e) { e.preventDefault(); });
+        }
+      } catch (e) { }
+    })();
+  </script>
 </head>
 
 <body>
 
-  <div class="marquee">
-    <div class="marquee-track">
-      <span data-i18n="marq1">🚚 شحن مجاني لأول طلب</span><span data-i18n="marq2">🔥 خصومات تصل ٤٠٪</span><span
-        data-i18n="marq3">🆕 قطع جديدة أسبوعياً</span><span data-i18n="marq4">💬 اطلب مباشرة عبر واتساب</span>
-      <span data-i18n="marq1">🚚 شحن مجاني لأول طلب</span><span data-i18n="marq2">🔥 خصومات تصل ٤٠٪</span><span
-        data-i18n="marq3">🆕 قطع جديدة أسبوعياً</span><span data-i18n="marq4">💬 اطلب مباشرة عبر واتساب</span>
-    </div>
-  </div>
+<div class="app-download-bar">
+  <a
+    href="https://apkpure.com/p/com.styleroj"
+    target="_blank"
+    rel="noopener"
+    download
+  >
+    📱 تنزيل تطبيق Style Roj
+  </a>
+</div>
 
   <header>
     <div class="logo-image">
@@ -32,24 +69,9 @@
       <ul>
         <li><a href="#gallery" data-i18n="nav_shop">تسوّق</a></li>
         <li><a href="#deals" data-i18n="nav_deals">عروض</a></li>
-        <li><a href="#about" data-i18n="nav_about">من نحن</a></li>
-        <li><a href="#contact" data-i18n="nav_contact">تواصل معنا</a>
 
         <li><a href="#" class="menu-language-btn" onclick="openLanguageModal()"> لغة</a></li>
-      </ul>
-    </nav>
-    <div class="header-actions">
-      <a href="tailoring.html"
-   class="tailor-btn"
-   title="تفصيل فستان"
-   aria-label="تفصيل فستان">
-
-  <span class="tailor-icon">👗</span>
-  <span class="tailor-text">تفصيل فستان</span>
-
-</a>
-      
-      <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="تبديل المظهر" aria-label="تبديل المظهر">
+              <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="تبديل المظهر" aria-label="تبديل المظهر">
         <svg class="icon-moon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
           <path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5 9 9 0 1 0 20.5 14.5Z" stroke="currentColor" stroke-width="1.7"
             stroke-linecap="round" stroke-linejoin="round" />
@@ -61,6 +83,21 @@
             stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
         </svg>
       </button>
+      </ul>
+    </nav>
+    <div class="header-actions">
+      <a href="#"
+   class="tailor-btn"
+   title="تفصيل فستان"
+   aria-label="تفصيل فستان"
+   onclick="openUnavailableBox(event)">
+
+  <span class="tailor-icon"></span>
+  <span class="tailor-text">تفصيل فستان</span>
+
+</a>
+      
+      
       <button class="cart-btn" onclick="openCart()" aria-label="السلة">
         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
           <path d="M6.5 8h11l-1 11.2a2 2 0 0 1-2 1.8H9.5a2 2 0 0 1-2-1.8L6.5 8Z" stroke="currentColor"
@@ -607,8 +644,138 @@
 
     
   </script>
+  <!-- شاشة استعادة كلمة المرور -->
+<section id="passwordRecoveryScreen"
+         aria-modal="true"
+         role="dialog"
+         aria-labelledby="passwordRecoveryTitle">
+
+  <div class="pr-card">
+
+    <img class="pr-logo"
+         src="logo/style-rouge.webp"
+         alt="Style Roj">
+
+    <div id="passwordRecoveryForm">
+
+      <div class="pr-symbol">🔐</div>
+
+      <h1 id="passwordRecoveryTitle">
+        إنشاء كلمة سر جديدة
+      </h1>
+
+      <p class="pr-desc">
+        أدخل كلمة السر الجديدة لحسابك، ثم أكّدها.
+      </p>
+
+      <label for="recoveryPassword">
+        كلمة السر الجديدة
+      </label>
+
+      <input
+        id="recoveryPassword"
+        type="password"
+        minlength="8"
+        maxlength="256"
+        autocomplete="new-password"
+        placeholder="٨ أحرف على الأقل"
+        required>
+
+      <label for="recoveryPasswordConfirm">
+        تأكيد كلمة السر الجديدة
+      </label>
+
+      <input
+        id="recoveryPasswordConfirm"
+        type="password"
+        minlength="8"
+        maxlength="256"
+        autocomplete="new-password"
+        placeholder="أعد كتابة كلمة المرور"
+        required>
+
+      <button
+        id="recoverySubmitBtn"
+        class="pr-submit"
+        type="button"
+        onclick="submitPasswordRecovery()">
+        حفظ كلمة السر الجديدة
+      </button>
+
+      <div
+        id="recoveryMessage"
+        class="pr-message"
+        role="status"
+        aria-live="polite">
+      </div>
+
+      <a class="pr-back"
+         href="index.html"
+         onclick="returnToStore(event)">
+        العودة إلى المتجر
+      </a>
+
+    </div>
+
+    <div id="passwordRecoverySuccess"
+         class="pr-state"
+         style="display:none">
+
+      <div class="pr-symbol">✓</div>
+
+      <h1>تم تغيير كلمة السر بنجاح</h1>
+
+      <p class="pr-desc">
+        يمكنك الآن تسجيل الدخول باستخدام كلمة السر الجديدة.
+      </p>
+
+      <button class="pr-submit"
+              type="button"
+              onclick="returnToStore()">
+        العودة إلى تسجيل الدخول
+      </button>
+
+    </div>
+
+    <div id="passwordRecoveryInvalid"
+         class="pr-state"
+         style="display:none">
+
+      <div class="pr-symbol">⚠️</div>
+
+      <h1>الرابط غير صالح</h1>
+
+      <p class="pr-desc">
+        قد يكون الرابط ناقصاً أو انتهت صلاحيته.
+        ارجع إلى المتجر واطلب رسالة جديدة.
+      </p>
+
+      <button class="pr-submit"
+              type="button"
+              onclick="returnToStore()">
+        العودة إلى المتجر
+      </button>
+
+    </div>
+
+  </div>
+</section>
 <script src="https://cdn.jsdelivr.net/npm/appwrite@26.2.0/dist/iife/sdk.min.js"></script>
-  <script src="script.js?v=20260913debug1"></script>
+  <script src="script.js?v=20261019recovery"></script>
+
+<!-- Unavailable box -->
+<div id="unavailableBox" onclick="closeUnavailableBox()" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.5);align-items:center;justify-content:center;padding:20px;">
+  <div onclick="event.stopPropagation()" role="dialog" aria-modal="true" style="background:#fff;color:#222;max-width:340px;width:100%;border-radius:16px;padding:28px 24px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.3);direction:rtl;font-family:inherit;">
+    <div style="font-size:18px;font-weight:700;margin-bottom:8px;">غير متوفر حالياً</div>
+    <div style="font-size:14px;opacity:.75;margin-bottom:20px;">خدمة تفصيل الفستان غير متوفرة في الوقت الحالي.</div>
+    <button type="button" onclick="closeUnavailableBox()" style="border:0;background:#222;color:#fff;padding:10px 28px;border-radius:999px;cursor:pointer;font-size:14px;font-family:inherit;">حسناً</button>
+  </div>
+</div>
+<script>
+function openUnavailableBox(e){ if(e) e.preventDefault(); document.getElementById('unavailableBox').style.display='flex'; }
+function closeUnavailableBox(){ document.getElementById('unavailableBox').style.display='none'; }
+document.addEventListener('keydown',function(e){ if(e.key==='Escape') closeUnavailableBox(); });
+</script>
 </body>
 
 </html>

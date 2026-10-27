@@ -1318,3 +1318,352 @@ footer{background:#1B1622;color:#c9c2d1;padding:60px 6% 26px;}
   transform:scale(.94);
 }
 
+.tailor-btn {
+  width: 85px;
+  height: 46px;
+  font-size: 14px;
+}
+@media (max-width: 600px) {
+  .tailor-btn {
+    font-size: 10px;
+  }
+}
+.tailor-btn {
+  font-size: 9px;
+}
+
+
+
+
+
+
+
+
+
+.app-download-bar{
+  width:100%;
+  padding:10px 15px;
+  display:flex;
+  justify-content:center;
+  position:relative;
+  z-index:9999;
+}
+
+.app-download-bar a{
+  width:min(700px,100%);
+  text-align:center;
+  text-decoration:none;
+  color:#fff;
+  background:linear-gradient(135deg,#ff5a8c,#d92d62);
+  padding:13px 20px;
+  border-radius:16px;
+  font-family:Cairo,Arial,sans-serif;
+  font-size:14px;
+  font-weight:800;
+  box-shadow:0 8px 22px rgba(217,45,98,.20);
+}
+
+@media(max-width:600px){
+  .app-download-bar{
+    padding:8px 10px;
+  }
+
+  .app-download-bar a{
+    font-size:13px;
+    padding:12px 15px;
+  }
+}
+/* ============ تصميم شاشة استعادة كلمة السر ============ */
+
+#passwordRecoveryScreen {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 1000000;
+  overflow-y: auto;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  direction: rtl;
+
+  background:
+    radial-gradient(
+      ellipse at top right,
+      rgba(255, 92, 138, .18),
+      transparent 45%
+    ),
+    radial-gradient(
+      ellipse at bottom left,
+      rgba(214, 61, 110, .12),
+      transparent 42%
+    ),
+    var(--bg, #FAF6F3);
+}
+
+#passwordRecoveryScreen.show {
+  display: flex;
+}
+
+.pr-card {
+  width: min(100%, 420px);
+  padding: 30px 26px 24px;
+
+  background: var(--surface, #fff);
+  color: var(--ink, #241E2E);
+
+  border: 1px solid var(
+    --nav-border,
+    rgba(214, 61, 110, .2)
+  );
+
+  border-radius: 26px;
+  box-shadow: 0 22px 70px rgba(36, 30, 46, .16);
+
+  text-align: right;
+  animation: prCardIn .24s ease-out;
+}
+
+@keyframes prCardIn {
+  from {
+    opacity: 0;
+    transform: translateY(9px) scale(.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.pr-logo {
+  display: block;
+  width: auto;
+  height: 42px;
+  max-width: 150px;
+  object-fit: contain;
+  margin: 0 auto 18px;
+}
+
+.pr-symbol {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 13px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 18px;
+  background: linear-gradient(140deg, #ff5c8a, #d63d6e);
+  color: #fff;
+  font-size: 25px;
+
+  box-shadow: 0 9px 20px rgba(214, 61, 110, .25);
+}
+
+.pr-card h1 {
+  font-family: 'Lalezar', sans-serif;
+  font-weight: 400;
+  font-size: 28px;
+  line-height: 1.3;
+
+  text-align: center;
+  color: var(--ink, #241E2E);
+
+  margin: 0 0 8px;
+}
+
+.pr-desc {
+  font-size: 14px;
+  line-height: 1.8;
+
+  color: var(--ink-soft, #726B7E);
+  text-align: center;
+
+  margin: 0 0 22px;
+}
+
+.pr-card label {
+  display: block;
+  font-size: 13px;
+  font-weight: 800;
+
+  margin: 14px 0 7px;
+  color: var(--ink, #241E2E);
+}
+
+.pr-card input {
+  display: block;
+  width: 100%;
+  min-width: 0;
+
+  border: 1.5px solid var(
+    --nav-border,
+    rgba(214, 61, 110, .2)
+  );
+
+  border-radius: 13px;
+  padding: 13px 14px;
+
+  background: var(--bg, #FAF6F3);
+  color: var(--ink, #241E2E);
+
+  font: inherit;
+  font-size: 14px;
+  outline: none;
+
+  transition: border-color .2s, box-shadow .2s;
+}
+
+.pr-card input:focus {
+  border-color: var(--accent, #FF5C8A);
+  box-shadow: 0 0 0 4px rgba(255, 92, 138, .12);
+}
+
+.pr-submit {
+  width: 100%;
+  border: 0;
+  border-radius: 14px;
+
+  margin-top: 18px;
+  padding: 13px 16px;
+
+  background: linear-gradient(140deg, #ff5c8a, #d63d6e);
+  color: #fff;
+
+  font: inherit;
+  font-weight: 800;
+  font-size: 15px;
+
+  box-shadow: 0 8px 18px rgba(214, 61, 110, .22);
+  transition: transform .15s, opacity .15s;
+  cursor: pointer;
+}
+
+.pr-submit:hover {
+  transform: translateY(-1px);
+}
+
+.pr-submit:disabled {
+  opacity: .65;
+  cursor: wait;
+  transform: none;
+}
+
+.pr-message {
+  display: none;
+  margin-top: 12px;
+  padding: 10px 12px;
+
+  border-radius: 11px;
+  font-size: 13px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+.pr-message.error,
+.pr-message.success {
+  display: block;
+}
+
+.pr-message.error {
+  color: #a32142;
+  background: #fff0f3;
+}
+
+.pr-message.success {
+  color: #08784e;
+  background: #e7f8f0;
+}
+
+.pr-back {
+  display: block;
+  width: max-content;
+  max-width: 100%;
+
+  margin: 18px auto 0;
+
+  text-align: center;
+  color: var(--accent-deep, #D63D6E);
+
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.pr-back:hover {
+  text-decoration: underline;
+}
+
+.pr-state {
+  text-align: center;
+}
+
+@media (max-width: 420px) {
+  #passwordRecoveryScreen {
+    padding: 14px;
+  }
+
+  .pr-card {
+    padding: 25px 19px 22px;
+    border-radius: 22px;
+  }
+
+  .pr-card h1 {
+    font-size: 25px;
+  }
+}
+
+/* Android app: reserve space for the fixed header and keep the hero watermark contained. */
+html.in-app,
+html.in-app body {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: hidden !important;
+}
+
+html.in-app body {
+  padding-top: 84px !important;
+  padding-bottom: 16px !important;
+}
+
+html.in-app body > header {
+  box-sizing: border-box !important;
+  min-height: 64px !important;
+  padding: 8px 12px !important;
+  background: linear-gradient(135deg, #ffffff, #fff6f9) !important;
+  box-shadow: 0 5px 18px rgba(214, 61, 110, 0.16) !important;
+  z-index: 1000 !important;
+}
+
+html.in-app .hero {
+  isolation: isolate;
+}
+
+html.in-app .top-banner {
+  overflow: hidden;
+  opacity: 0.06 !important;
+}
+
+html.in-app .top-banner .logo-img {
+  width: min(100%, 520px) !important;
+  height: auto !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: contain !important;
+}
+
+html.in-app .hero-text {
+  z-index: 2 !important;
+  width: 100%;
+}
+
+html.in-app .bottom-nav,
+html.in-app .header-actions .account-btn,
+html.in-app .header-actions .tailor-btn {
+  display: none !important;
+}
+
+html.in-app section[id],
+html.in-app #gallery {
+  scroll-margin-top: 76px;
+}
